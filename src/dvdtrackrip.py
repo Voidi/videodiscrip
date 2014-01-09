@@ -32,6 +32,8 @@ class DvdSourceError(Exception):
 		self.source = source
 		self.subprocess_stderror = subprocess_stderror
 
+#abort if essential commands not found, vobsub2srt and aspell are optinal
+#TODO extended checking for vobsub2srt, aspell and corresponding language packages
 commands = {'lsdvd': "", 'mplayer': "", 'mencoder': "", 'mkvmerge' : ""}
 for name in commands:
 	if shutil.which(name) is None:
@@ -41,27 +43,29 @@ commands['vobsub2srt'] = shutil.which("vobsub2srt")
 commands['aspell'] = shutil.which("aspell")
 
 
-#get Infos with lsdvd directly as a pythonstructure
+#get Infos with lsdvd , returns pythonstructure
 def getDvdTrackInfo(dvdsource, absolutetrack):
 	process = subprocess.Popen( [commands['lsdvd'], "-savcOy", "-t", str(absolutetrack), dvdsource], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	process.wait()
+	stdout= process.stdout.read()
+	stderr= process.stderr.read()
 	if process.returncode == 0:
-		return ast.literal_eval(process.stdout.read()[8:])
+		return ast.literal_eval(stdout[8:])
 	elif process.returncode == 5:
 		#returncode 5 is used if the dvd didn't contains this tracknumber
-		raise DvdTrackError(dvdsource, absolutetrack, process.stderr.read())
+		raise DvdTrackError(dvdsource, absolutetrack, stderr)
 	elif process.returncode in (1, 2, 3):
-		raise DvdSourceError(dvdsource, process.stderr.read())
+		raise DvdSourceError(dvdsource, stderr)
 	else:
-		raise SubProcessError( " ".join([commands['lsdvd'], "-savcOy", "-t", str(absolutetrack), dvdsource]), process.returncode, process.stdout.read() )
+		raise SubProcessError( " ".join([commands['lsdvd'], "-savcOy", "-t", str(absolutetrack), dvdsource]), process.returncode, stderr )
 
-#get TrackIDs with mkvmerge from tempory ripped file, needed for robust merging
+#get TrackIDs with mkvmerge from temporary ripped file, needed for robust merging, returns pythonstructure
 def getVobTracks(vobSource):
 	process = subprocess.Popen( [commands['mkvmerge'], "--identify", vobSource ], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	process.wait()
+	stdout= process.stdout.read()
 
 	if process.returncode == 0:
-		stdout = process.stdout.read()
 		stdout = stdout.splitlines()
 		vobTracks = { 'video': [], 'audio': []}
 		for line in stdout:
@@ -76,18 +80,21 @@ def getVobTracks(vobSource):
 	elif process.returncode in (1,2):
 		raise FileNotFoundError("getVobTracks:", vobSource)
 	else:
-		raise SubProcessError("getVobTracks", process.returncode, process.stdout.read())
+		#use stout as argument because mkvmerge don't write to stderr
+		raise SubProcessError("getVobTracks", process.returncode, stdout)
 
 #generic function to run all other extern commands
 def runSubProcess(command):
 	stdoutfile = open("stdout.log", 'a')
 	stdoutfile.write( "Running:" + ' '.join(command) + "\n" )
 	process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	stdout= process.stdout.read()
+	stderr= process.stderr.read()
 	process.wait()
-	stdoutfile.write(process.stdout.read() + "\n")
+	stdoutfile.write(stdout + "\n")
 	stdoutfile.close()
 	if process.returncode is not 0:
-		raise SubProcessError(command, process.returncode, process.stdout.read())
+		raise SubProcessError(command, process.returncode, stderr)
 
 def ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=None, chaptersData=None, tagsData=None):
 	trackinfo = getDvdTrackInfo(dvdsource, absolutetrack)
@@ -110,21 +117,17 @@ def ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=None, chapters
 				vobsub2srt_arguments = ["-lang", subtitlestream['langcode'], workspace+"/subtitles_"+subtitlestream['langcode']]
 				runSubProcess([commands['vobsub2srt']] + vobsub2srt_arguments)
 			except SubProcessError as error:
-				raise
-			else:
-				aspell_arguments = ["aspell", "--lang="+subtitlestream['langcode'], "check",  workspace+"/subtitles_"+subtitlestream['langcode']+".srt"]
-				runSubProcess([commands['aspell']] + aspell_arguments)
-			finally:
-				pass
+				if error.args[1] is 1:
+					#TODO: maybe? implement own exception: dependency not found
+					raise
+				else:
+					raise
+
 			try:
 				aspell_arguments = ["aspell", "--lang="+subtitlestream['langcode'], "check",  workspace+"/subtitles_"+subtitlestream['langcode']+".srt"]
 				runSubProcess([commands['aspell']] + aspell_arguments)
 			except SubProcessError as error:
 				raise
-			else:
-				pass
-			finally:
-				pass
 
 	#get track ids from the ripped vob file, used in mkvmerge
 	vobtracks = getVobTracks( workspace+"/videotrack.vob" )
@@ -160,15 +163,12 @@ def ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=None, chapters
 
 def dvdtrackrip(dvdsource, absolutetrack, destinationPath, subtitleConvert=None, chaptersData=None, tagsData=None):
 	tempfile.tempdir = os.path.dirname(destinationPath)
-
-	filebasename = os.path.basename(destinationPath)
-	#filebasename = os.path.normpath("".join([x if x not in ('/', '\\') else "_" for x in filebasename]))
-	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=filebasename)
+	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 
 	try:
 		ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=subtitleConvert, chaptersData=chaptersData, tagsData=tagsData)
 		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
-			raise FileNotFoundError("dvdtrackrip:", workspace+"/"+filebasename)
+			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
 		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
 	except SubProcessError as error:
 		errorlog = open(workspace+"/error.log", 'w')
