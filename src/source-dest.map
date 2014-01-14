@@ -2,15 +2,17 @@
 #	TRACK@[--OPTION1 OPTION_VALUE1 OPTION_VALUE2 --OPTION2 OPTION_VALUE ..]@NAMEWITHOUTEXTENSION
 #
 #OPTION:
-#	--threshold LOWERLIMIT HIGHERLIMIT | --threshold timearea	
-#	
+#	--threshold LOWERLIMIT HIGHERLIMIT | --threshold timearea
+#
 #DVDSOURCE@[--OPTION1=OPTION_VALUE --OPTION2 OPTION_VALUE ..]@/DESTINATION/DIR
 #	NAME WITHOUT EXTENSION
 #	IN Order of Appearance
 
 #Example:
 
-Ein Käfig voller Helden Staffel 1 Disc 1@--threshold 24m 26m@/Staffel 1
+@--pattern $Collection_TITLE_eng@
+
+Ein Käfig voller Helden Staffel 1 Disc 1@--threshold 24m 26m --pattern $Episode_PART_NUMBER $Episode_TITLE_eng $Episode_TITLE_ger@/Staffel 1
 	1. Kuckuck im Nest
 	2. Operation „Tiger“
 	3. Kommandant des Jahres

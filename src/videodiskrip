@@ -10,7 +10,6 @@ class MapParseError(Exception):
 		line -- Content of Line where error occurs
 
 	"""
-
 	def __init__(self, linenumber, line):
 		self.linenumber = linenumber
 		self.line = line
@@ -90,15 +89,11 @@ def parseMapFile(mapfile):
 	for dvdstructure in source_dest_map:
 		if dvdstructure is None:
 			source_dest_map.remove(dvdstructure)
-
-	#print(source_dest_map)
-
 	return source_dest_map
 
 
-#BEGIN main
 if __name__ == "__main__":
-
+	#BEGIN main
 	try:
 		parser = argparse.ArgumentParser(description='rip a specific track from a DVD Strukture into a mkv container without reencoding' )
 
@@ -162,15 +157,14 @@ if __name__ == "__main__":
 				except shutil.Error as error:
 					print("\033[92m", error.args[0], "\033[0m", file=sys.stderr)
 
-#END main
+	#END main
 
 	except MapParseError as error:
 		printerror("The mapfile seems not be valid!")
 		printerror("Linenumber:" + str(error.args[0]) +  "->" + error.args[1])
 
 	except dvdtrackrip.DvdTrackError as error:
-		printerror("In Dvd source '" + error.args[0] + "' exists no Track number", error.args[1])
-		#print("stderr: \n", error.args[2], file=sys.stderr)
+		printerror("In Dvd source '" + error.args[0] + "' exists no Track number " + error.args[1])
 
 	except dvdtrackrip.DvdSourceError as error:
 		printerror("The path '" + error.args[0] + "' contains no valid DVD source")
