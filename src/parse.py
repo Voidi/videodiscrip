@@ -72,3 +72,43 @@ def parseMapFile(mapfile):
 		if dvdstructure is None:
 			source_dest_map.remove(dvdstructure)
 	return source_dest_map
+
+def parseBatchFile(batchFile):
+	batchFile_handle = open(batchFile, "rt")
+	batchFile_lines = batchFile_handle.readlines()
+	batchFile_handle.close()
+
+	batchJobs = []
+	stack = []
+	mappingOrder = []
+	for lineNumber, lineOfFile in enumerate(batchFile_lines):
+		#print("line: "+ str(lineNumber))
+		if not lineOfFile.lstrip().startswith('#') and not lineOfFile.startswith('\n'):
+			depth = lineOfFile.rstrip().count('\t')
+			if lineOfFile.lstrip().startswith('%'):
+				#Parse order of mapping variables
+
+				#find all templatestring with sorrounding delimiters
+				match = re.findall(r'([^(?<!\\)%]*)((?<!\\)%.*?(?<!\\)%)([^(?<!\\)%]*)', lineOfFile.strip())
+				#generate the RegEx pattern, for Datamatching
+				pattern = r''+''.join([re.escape(match[i][0])+'(.*?)'+re.escape(match[i][2]) for i in range(len(match))])+'$'
+				#save pattern in correct structurdepth
+				mappingOrder.insert( depth, {'pattern': pattern,'template_strings': re.findall(r'(?<!\\)%(.*?)(?<!\\)%', lineOfFile.strip())} )
+			else:
+				#Parse the mapping data
+				if depth < len(stack):
+					del(stack[depth:len(stack)])
+				#TODO
+				#chapter Startcode ausnahme?
+				#werte optional machen fallls weniger angeben
+				#print(mappingOrder[depth]['template_strings'])
+				#print(mappingOrder[depth])
+				match = re.search(mappingOrder[depth]['pattern'], lineOfFile.strip())
+				#print(match.groups())
+				temp_stack = {}
+				for index,template_string in enumerate(mappingOrder[depth]['template_strings']):
+					temp_stack[template_string] = match.group(index+1)
+				stack.append(temp_stack)
+				print(stack)
+
+	return mappingOrder
