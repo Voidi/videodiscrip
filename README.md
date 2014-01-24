@@ -2,8 +2,8 @@ videodiskrip
 ============
 Rip tracks from a DVD Strukture into .mkv containers without reencoding.
 There a two modes:
-- Single mode: rip a single Track, specifying options on the commandline
-- Batch mode: Using a mapfile, it is capable to rip automatical Media from different Sources applying indvidual Metadata and filenames to each file.
+- Direct mode: rip a from a single Source, specifying options on the commandline #TODO: maybe without metadata
+- Batch mode: Using a mapfile, it is capable to rip automatical Media from different Sources applying individual Metadata and filenames to each file.
 
 Dependencies
 ------------

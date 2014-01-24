@@ -11,9 +11,9 @@ dvdsource = "/home/tobias/Videos/Serien/Die Mumins/Mumin Box1 Dvd1"
 dvdinfo = {'device': '/home/tobias/Videos/Serien/Die Mumins/Mumin Box1 Dvd1', 'track': [{'width': 720, 'vts': 1, 'audio': [{'content': 'Undefined', 'langcode': 'de', 'language': 'Deutsch', 'quantization': 'drc', 'channels': 2, 'ix': 1, 'streamid': '0x80', 'frequency': 48000, 'ap_mode': 0, 'format': 'ac3'}], 'fps': 25.0, 'chapter': [{'ix': 1, 'length': 65.37, 'startcell': 1}, {'ix': 2, 'length': 1326.24, 'startcell': 2}, {'ix': 3, 'length': 0.09, 'startcell': 3}], 'ix': 1, 'length': 1392.09, 'vts_id': 'DVDVIDEO-VTS', 'aspect': '4/3', 'height': 576, 'df': '?', 'ttn': 1, 'subp': [], 'format': 'PAL'}], 'provider_id': '', 'vmg_id': 'DVDVIDEO-VMG', 'title': 'unknown'}
 chapters = deepcopy(dvdinfo['track'][0]['chapter'])
 
-def getChapters(dvdinfo):
+def getChapters(chapters):
 	for index,chapter in enumerate(chapters):
-		chapters[index]['display'] = [{'language': "eng", 'name': "Chapter" + str(index)}, {'language': "ger", 'name': "Kapitel" + str(index)}]
+		chapters[index]['display'] = [{'language': "eng", 'name': "Chapter " + str(index)}, {'language': "ger", 'name': "Kapitel " + str(index)}]
 
 	implementation = minidom.getDOMImplementation()
 	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
@@ -39,6 +39,6 @@ def getChapters(dvdinfo):
 
 	return xmlDocument
 
-	#chapterXML_file = open("chapters.xml", "w")
-	#xmlDocument.writexml(chapterXML_file, '\t', '\t', '\n', encoding="UTF-8")
-	#chapterXML_file.close()
+chapterXML_file = open("chapters.xml", "w")
+getChapters(chapters).writexml(chapterXML_file, '\t', '\t', '\n', encoding="UTF-8")
+chapterXML_file.close()
