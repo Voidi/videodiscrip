@@ -2,6 +2,17 @@
 
 import os, sys, dvdtrackrip, string, re, argparse, shutil
 
+class ArgumentError(Exception):
+	"""Exception raised when calling a videodiskrip function with nonvalid Arguments.
+
+	Attributes:
+		function ---
+		errorMessage --
+	"""
+	def __init__(self, function, errorMessage):
+		self.errorMessage = errorMessage
+		self.function = function
+
 class MapParseError(Exception):
 	"""Exception raised for nonvalid mapfile Sysntax.
 
