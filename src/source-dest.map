@@ -1,33 +1,26 @@
-#DVDSOURCE@[--OPTION1 OPTION_VALUE1 OPTION_VALUE2 --OPTION2 OPTION_VALUE ..]@/DESTINATION/
-#	TRACK@[--OPTION1 OPTION_VALUE1 OPTION_VALUE2 --OPTION2 OPTION_VALUE ..]@NAMEWITHOUTEXTENSION
-#
-#OPTION:
-#	--threshold LOWERLIMIT HIGHERLIMIT | --threshold timearea
-#
-#DVDSOURCE@[--OPTION1=OPTION_VALUE --OPTION2 OPTION_VALUE ..]@/DESTINATION/DIR
-#	NAME WITHOUT EXTENSION
-#	IN Order of Appearance
-
 #Example:
+#'@' is used as delimiter
 
-@--pattern $Collection_TITLE_eng@
+%SOURCE_PATH-PART%@%OUTPUT_PATH-PART%@%OPTIONS%@%Collection_Title-eng%@%Collection_Title-ger%@%CHAPTER_LANG%@%CHAPTER_TITLE%
+	%SOURCE_PATH-PART%@%OUTPUT_PATH-PART%@%OPTIONS%@%Season_Partnumber%@%Season_Totalparts%@%Season_Title-eng%@%Season_Title-ger%
+		%Episode_Partnumber%. %Episode_Title-eng%@%Episode_Title-ger%
 
-Ein Käfig voller Helden Staffel 1 Disc 1@--threshold 24m 26m --pattern $Episode_PART_NUMBER $Episode_TITLE_eng $Episode_TITLE_ger@/Staffel 1
-	1. Kuckuck im Nest
-	2. Operation „Tiger“
-	3. Kommandant des Jahres
-	4. Es war einmal ein General
-	5. Die Pflicht zu fliehen
-	6. Das graue Phantom
-	7. Mit eingebauter Bombe
-Ein Käfig voller Helden Staffel 1 Disc 2@--threshold 24m 26m@/Staffel 1
-	8. Achtung, Aufnahme!
-	9. Was ist in dem Faß?
-	10. Kennen Sie Lilli Marleen?
-	11. Der Zahnarzttermin
-	12. In einer Blitzaktion
-	13. Die falschen Fünfziger
-	14. Alles in Öl
 
-#rips all Tracks within threshold, these will automatical named with there tracknumber
-Ein Käfig voller Helden Staffel 1 Disc 3@--threshold 24m 26m@/Staffel 1
+Ein Käfig voller Helden@Hogean's Heros_Ein Käfig voller Helden@--threshold 24m 26m@Hogean's Heros@Ein Käfig voller Helden@eng%ger@Chapter $i%Kapitel $i
+	Ein Käfig voller Helden Staffel 1 Disc 1@Staffel 1@--subtitle_convert@1@6@Season 1@Staffel 1
+		1. The Informer@Kuckuck im Nest
+		2. Hold That Tiger@Operation „Tiger“
+		3. Kommandant of the Year@Kommandant des Jahres
+		4. The Late Inspector General@Es war einmal ein General
+		5. The Flight of the Valkyrie@Die Pflicht zu fliehen
+		6. The Prisoner's Prisoner@Das graue Phantom
+		7. German Bridge Is Falling Down@Mit eingebauter Bombe
+	Ein Käfig voller Helden Staffel 1 Disc 2@Staffel 1@1@6@Season 1@Staffel 1
+		8. Movies Are Your Best Escape@Achtung, Aufnahme!
+		9. Go Light on the Heavy Water@Was ist in dem Faß?
+		10. Top Hat, White Tie and Bomb Sights@Kennen Sie Lilli Marleen?
+		11. Happiness Is a Warm Sergeant@Der Zahnarzttermin
+		12. The Scientist@In einer Blitzaktion
+		13. Hogan's Hofbrau@Die falschen Fünfziger
+		14. Oil for the Lamps of Hogan@Alles in Öl
+
