@@ -7,13 +7,13 @@
 	</Targets>
 	<Simple>
 		<Name>TITLE</Name>
-		<String>$Collection_TITLE_eng</String>
+		<String>%Collection_Title-eng%</String>
 		<TagLanguage>eng</TagLanguage>
 		<DefaultLanguage>0</DefaultLanguage>
 	</Simple>
 	<Simple>
-		<Name>$TITLE</Name>
-		<String>$Collection_TITLE_ger</String>
+		<Name>TITLE</Name>
+		<String>%Collection_Title-ger%</String>
 		<TagLanguage>ger</TagLanguage>
 		<DefaultLanguage>0</DefaultLanguage>
 	</Simple>
@@ -24,31 +24,31 @@
 		</Targets>
 		<Simple>
 			<Name>PART_NUMBER</Name>
-			<String>$Season_PART_NUMBER</String>
+			<String>%Season_Partnumber%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String>$Season_TITLE_eng</String>
+			<String>%Season_Title-eng%</String>
 			<TagLanguage>eng</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String>$Season_TITLE_ger</String>
+			<String>%Season_Title-ger%</String>
 			<TagLanguage>ger</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>DATE_RELEASE</Name>
-			<String>$DATE_RELEASE</String>
+			<String>%RelaseDate%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TOTAL_PARTS</Name>
-			<String>$Season_TOTAL_PARTS</String>
+			<String>%Season_Totalparts%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>
@@ -59,49 +59,49 @@
 		</Targets>
 		<Simple>
 			<Name>PART_NUMBER</Name>
-			<String>$Episode_PART_NUMBER</String>
+			<String>%Episode_Partnumber%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String>$Episode_TITLE_eng</String>
+			<String> %Episode_Title-eng%</String>
 			<TagLanguage>eng</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String>$Episode_TITLE_ger</String>
+			<String> %Episode_Title-ger%</String>
 			<TagLanguage>ger</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>WRITTEN_BY</Name>
-			<String>$WRITTEN_BY</String>
+			<String>%WrittenBy%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>DESCRIPTION</Name>
-			<String>$DESCRIPTION_eng</String>
+			<String>%Summary__ger%</String>
 			<TagLanguage>eng</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>DESCRIPTION</Name>
-			<String>$DESCRIPTION_ger</String>
+			<String>%Summary__ger%</String>
 			<TagLanguage>ger</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>SUMMARY</Name>
-			<String>$SUMMARY_eng</String>
+			<String>%Summary_ger%</String>
 			<TagLanguage>eng</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>SUMMARY</Name>
-			<String>$SUMMARY_ger</String>
+			<String>%Summary_ger%</String>
 			<TagLanguage>ger</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
