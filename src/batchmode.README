@@ -1,0 +1,30 @@
+batchjob.map file consist of two parts:
+-data template:
+	Define sequenze of variables, used later in data structure
+	variables are enclosed by '%', beetween the Variables any delimiters can be chosen freely(and any amount)
+	delimiters are used in data structure to seperate the values
+	predefined Variables:
+		SOURCE_PATH-PART
+		OUTPUT_PATH-PART
+		OPTIONS
+		CHAPTER_LANG
+		CHAPTER_TITLE
+-data structure:
+	Fill the variable given in data template with values
+
+Lines starting with '#' or only whitespace are ignored.
+Data template lines must start with a variable, because the are recognized by the '%'.
+Lines starting with another character are treaten as data structure lines.
+
+
+%SOURCE_PATH-PART%@%OUTPUT_PATH-PART%@%OPTIONS%@%METADATA%
+	%SOURCE_PATH-PART%@%OUTPUT_PATH-PART%@%METADATA%
+		%METADATA%
+
+
+
+OPTION:
+	--threshold LOWERLIMIT HIGHERLIMIT | --threshold timearea
+	--subtitle_convert
+	--tags_templatefile
+	--filename "%Episode_Partnumber%. %Episode_Title-eng%_%Episode_Title-ger%.%FILENAME_EXTENSION"
