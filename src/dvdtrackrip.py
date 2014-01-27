@@ -96,17 +96,17 @@ def runSubProcess(command):
 	if process.returncode is not 0:
 		raise SubProcessError(command, process.returncode, stderr)
 
-def ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=None, chaptersData=None, tagsData=None):
-	trackinfo = getDvdTrackInfo(dvdsource, absolutetrack)
+def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, chaptersData=None, tagsData=None):
+	trackinfo = getDvdTrackInfo(dvdsource_Path, absolutetrack)
 	os.chdir(workspace)
 
 	#Rip media data from dvd without any conversion to a vob file
-	mplayer_arguments =[ "-dvd-device", dvdsource, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", workspace+"/videotrack.vob" ]
+	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", workspace+"/videotrack.vob" ]
 	mplayer_stdout = runSubProcess([commands['mplayer']] + mplayer_arguments)
 
 	#for each detected Vobsub stream rip von dvdstructure
 	for subtitlestream in trackinfo['track'][0]['subp']:
-		mencoder_arguments =["-quiet", "-dvd-device", dvdsource, "dvd://"+str(absolutetrack), "-nosound", "-ovc", "frameno", "-o", "/dev/null"]
+		mencoder_arguments =["-quiet", "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-nosound", "-ovc", "frameno", "-o", "/dev/null"]
 		mencoder_arguments +=["-slang", subtitlestream['langcode'], "-vobsuboutindex", "0", "-vobsuboutid", subtitlestream['langcode']]
 		mencoder_arguments +=["-vobsubout", workspace+"/subtitles_"+subtitlestream['langcode']]
 		mencoder_stdout = runSubProcess([commands['mencoder']] + mencoder_arguments)
@@ -161,12 +161,12 @@ def ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=None, chapters
 	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
 	os.chdir("..")
 
-def dvdtrackrip(dvdsource, absolutetrack, destinationPath, subtitleConvert=None, chaptersData=None, tagsData=None):
+def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, subtitleConvert=None, chaptersData=None, tagsData=None):
 	tempfile.tempdir = os.path.dirname(destinationPath)
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 
 	try:
-		ripTrack(dvdsource, absolutetrack, workspace, subtitleConvert=subtitleConvert, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=subtitleConvert, chaptersData=chaptersData, tagsData=tagsData)
 		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
 			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
 		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
