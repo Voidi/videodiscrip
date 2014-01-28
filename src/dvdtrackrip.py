@@ -44,7 +44,7 @@ commands['aspell'] = shutil.which("aspell")
 
 
 #get Infos with lsdvd , returns pythonstructure
-def getDvdTrackInfo(dvdsource, absolutetrack):
+def getDvdTrackInfo(dvdsource, absolutetrack=0):
 	process = subprocess.Popen( [commands['lsdvd'], "-savcOy", "-t", str(absolutetrack), dvdsource], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	process.wait()
 	stdout= process.stdout.read()
