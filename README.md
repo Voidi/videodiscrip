@@ -1,4 +1,4 @@
-videodiskrip
+videodiscrip
 ============
 Rip tracks from a DVD Strukture into .mkv containers without reencoding.
 There a two modes:
