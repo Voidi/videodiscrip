@@ -59,18 +59,18 @@ def mergeStack_parts(*stackParts):
 			mergedStack[key] = "".join(str(part.get(key,'')) for part in stackParts)
 """
 
-def parseBatchFile(batchFile):
-	batchFile_handle = open(batchFile, "rt")
+def parseBatchFile(batchFile_handle):
+	#batchFile_handle = open(batchFile, "rt")
 	batchFile_lines = batchFile_handle.readlines()
-	batchFile_handle.close()
+	#batchFile_handle.close()
 
-	batchJobs = []
+	jobQueue = []
 	jobStack = []
 	mappingOrder = []
 	trackCounter = 0
 	for lineNumber, lineOfFile in enumerate(batchFile_lines):
 		#unless the line starts with '#' or is empty there should be data for us
-		if not lineOfFile.lstrip().startswith('#') and not lineOfFile.startswith('\n'):
+		if not lineOfFile.lstrip().startswith('#') and not lineOfFile.lstrip().startswith('\n'):
 
 			#get depth in the mapping tree
 			depth = lineOfFile.rstrip().count('\t')
@@ -114,14 +114,16 @@ def parseBatchFile(batchFile):
 
 					#if the current line contains a "SOURCE_PATH-PART", this must be a new VideoSource
 					if "SOURCE_PATH-PART" in jobStack_Part:
-						batchJobs.append({'Control': "newVideoSource"})
+						jobQueue.append({'Control': "newVideoSource"})
 
 				#append data of current line to stack, holding all data of current higher levels
 				jobStack.append(jobStack_Part)
+				#check if next line isn't on a deeper level
+				#TODO: must check for EOF
 				if depth >= batchFile_lines[lineNumber+1].rstrip().count('\t'):
 					trackCounter += 1
 					mergedStack = mergeStack_parts(*jobStack)
 					mergedStack['SOURCE_TRACKNUMBER'] = trackCounter
-					batchJobs.append(mergedStack)
+					jobQueue.append(mergedStack)
 
-	return batchJobs
+	return jobQueue
