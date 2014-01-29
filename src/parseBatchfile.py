@@ -115,6 +115,7 @@ def parseBatchFile(batchFile_handle):
 					#if the current line contains a "SOURCE_PATH-PART", this must be a new VideoSource
 					if "SOURCE_PATH-PART" in jobStack_Part:
 						jobQueue.append({'Control': "newVideoSource"})
+						trackCounter = 0
 
 				#append data of current line to stack, holding all data of current higher levels
 				jobStack.append(jobStack_Part)
