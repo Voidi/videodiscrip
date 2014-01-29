@@ -70,7 +70,7 @@ def parseBatchFile(batchFile_handle):
 	trackCounter = 0
 	for lineNumber, lineOfFile in enumerate(batchFile_lines):
 		#unless the line starts with '#' or is empty there should be data for us
-		if not lineOfFile.lstrip().startswith('#') and not lineOfFile.lstrip().startswith('\n'):
+		if not lineOfFile.lstrip().startswith('#') and not lineOfFile.strip() is "":
 
 			#get depth in the mapping tree
 			depth = lineOfFile.rstrip().count('\t')
