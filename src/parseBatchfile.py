@@ -120,8 +120,7 @@ def parseBatchFile(batchFile_handle):
 				#append data of current line to stack, holding all data of current higher levels
 				jobStack.append(jobStack_Part)
 				#check if next line isn't on a deeper level
-				#TODO: must check for EOF
-				if depth >= batchFile_lines[lineNumber+1].rstrip().count('\t'):
+				if lineNumber == len(batchFile_lines)-1 or depth >= batchFile_lines[lineNumber+1].rstrip().count('\t'):
 					trackCounter += 1
 					mergedStack = mergeStack_parts(*jobStack)
 					mergedStack['SOURCE_TRACKNUMBER'] = trackCounter
