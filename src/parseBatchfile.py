@@ -1,8 +1,11 @@
 #!/usr/bin/env python3.3
 
-import re, os, string
+##
+#TODO, parse every line and seperate the values into the rippingJob groups
+import re, os
+from helper import rippingJob
 
-class BatchSytanxError(Exception):
+class  Error(Exception):
 	"""Exception raised for nonvalid Batchfile Syntax.
 
 	Attributes:
@@ -12,52 +15,27 @@ class BatchSytanxError(Exception):
 	def __init__(self, linenumber):
 		self.linenumber = linenumber
 
-def getTracksInThreshold(dvdSourceInfo, *PARAM_thresholds):
-	thresholds = list(PARAM_thresholds)
-	for threshold in thresholds:
-		if not re.match(r'^\d*[mh]?$', threshold):
-			raise ArgumentError("")
-	#threshold must be an array, but at the moment only the two first values are used
-	tracksInThreshold = []
-	#if only one threshold is passed, the value is used for both borders
-	if len(thresholds) is 1:
-		thresholds.append(str(int(thresholds[0].strip(string.ascii_letters)) + 1)+thresholds[0].strip(string.digits))
-	#if the threshold contains a 'm', 'h' suffixes the values are interpreted as minutes or hours
-	#for comparing with lsdvd these are converted in seconds
-	for i, value in enumerate(thresholds):
-		if 'm' in value:
-			thresholds[i] = int(value.strip(string.ascii_letters)) * 60
-		if 'h' in value:
-			thresholds[i] = int(value.strip(string.ascii_letters)) * 3600
-
-	for index in dvdSourceInfo['track']:
-		if round(index['length']) in range( int(thresholds[0]), int(thresholds[1]) ):
-			tracksInThreshold += [index['ix']]
-	return tracksInThreshold
-
 def mergeStack_parts(*stackParts):
-	mergedStack = {'metaData': {}}
+	output = rippingJob()
+	for part in stackParts:
+		output += part
+	return output
+"""
+	mergedStack = {'METADATA': {}, 'CHAPTERS': {}}
 
 	for stack in stackParts:
 		for key in stack.keys():
 			if key == "SOURCE_PATH-PART" or key == "OUTPUT_PATH-PART":
 				mergedStack[key] = os.path.normpath(os.path.join(mergedStack.get(key,''),stack.get(key,'')))
 			elif key == "OPTIONS":
-				mergedStack[key] = " ".join({mergedStack.get(key,''),stack.get(key,'')})
+				mergedStack['OPTIONS'] = " ".join({mergedStack.get(key,''),stack.get(key,'')})
+			elif key[:15] == "CHAPTER_TITLES_":
+				mergedStack['CHAPTERS'][key[15:]] =  stack.get(key,'').split('%')
 			else:
-				mergedStack['metaData'][key] = "".join({str(mergedStack.get(key,'')),str(stack.get(key,''))})
+				mergedStack['METADATA'][key] = "".join({str(mergedStack['METADATA'].get(key,'')),str(stack.get(key,''))})
 	return mergedStack
 """
-	#First variant
-	keys = set().union(*stackParts)
-	for key in keys:
-		if key == "SOURCE_PATH-PART" or key == "OUTPUT_PATH-PART":
-			mergedStack[key] = os.path.normpath(os.path.join(*[part.get(key,'') for part in stackParts]))
-		elif key == "OPTIONS":
-			mergedStack[key] = " ".join(str(part.get(key,'')) for part in stackParts)
-		else:
-			mergedStack[key] = "".join(str(part.get(key,'')) for part in stackParts)
-"""
+
 
 def parseBatchFile(batchFile_handle):
 	#batchFile_handle = open(batchFile, "rt")
@@ -92,18 +70,22 @@ def parseBatchFile(batchFile_handle):
 			else:
 				#Parse data structure
 
-				#iterate over all variables defined in the template
+				#iterate over all variables defined in the template, and check against it's pattern
 				startPos = 0
 				jobStack_Part = {}
 				for index in range(0, len(mappingOrder[depth])):
-					pattern = re.compile(mappingOrder[depth][index]['pattern'])
-					match = pattern.search(lineOfFile.strip(), startPos)
+					variablePattern = re.compile(mappingOrder[depth][index]['pattern'])
+					match = variablePattern.search(lineOfFile.strip(), startPos)
 					startPos = match.end()
 					#if some variables are not filled, go to next line
 					if startPos == len(lineOfFile):
 						break
 					#append value of current variable to a dictionary holding all data of the current line
-					jobStack_Part[mappingOrder[depth][index]['template_string']] = match.group(1)
+					if mappingOrder[depth][index]['template_string'] == "OPTIONS":
+						#print(mappingOrder[depth][index]['template_string'])
+						jobStack_Part[mappingOrder[depth][index]['template_string']] = {'test': match.group(1)}
+					else:
+						jobStack_Part[mappingOrder[depth][index]['template_string']] = match.group(1)
 
 				#check if we are on a higher level on the mapping tree then before
 				#also immply that lines have parsed before
@@ -113,17 +95,18 @@ def parseBatchFile(batchFile_handle):
 					del(jobStack[depth:])
 
 					#if the current line contains a "SOURCE_PATH-PART", this must be a new VideoSource
-					if "SOURCE_PATH-PART" in jobStack_Part:
+					#TODO: match only a the last level SOURCE_PATH-PART
+					if "SOURCE_PATH" in jobStack_Part:
 						jobQueue.append({'Control': "newVideoSource"})
 						trackCounter = 0
 
 				#append data of current line to stack, holding all data of current higher levels
-				jobStack.append(jobStack_Part)
+				jobStack.append(rippingJob(jobStack_Part))
 				#check if next line isn't on a deeper level
 				if lineNumber == len(batchFile_lines)-1 or depth >= batchFile_lines[lineNumber+1].rstrip().count('\t'):
 					trackCounter += 1
 					mergedStack = mergeStack_parts(*jobStack)
-					mergedStack['SOURCE_TRACKNUMBER'] = trackCounter
+					mergedStack.SOURCE_TRACKNUMBER = trackCounter
 					jobQueue.append(mergedStack)
 
 	return jobQueue
