@@ -70,6 +70,7 @@ from datetime import timedelta
 import xml.dom.minidom
 
 def generateChaptersXML(chapters_timecode, chapters_display):
+	#chapterstime_code must be the content of 'chapter' from the lsdvd info
 	implementation = xml.dom.minidom.getDOMImplementation()
 	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
 	xmlDocument = implementation.createDocument(None,'Chapters', doctype=doctype)
@@ -87,10 +88,13 @@ def generateChaptersXML(chapters_timecode, chapters_display):
 		chapterAtom.appendChild(xmlDocument.createElement("ChapterFlagHidden")).appendChild(xmlDocument.createTextNode('0'))
 		chapterAtom.appendChild(xmlDocument.createElement("ChapterFlagEnabled")).appendChild(xmlDocument.createTextNode('1'))
 
-		for chapter_langTitle in chapters_display[chapter_index]:
-				chapterDisplay = chapterAtom.appendChild(xmlDocument.createElement("ChapterDisplay"))
-				chapterDisplay.appendChild(xmlDocument.createElement("ChapterString")).appendChild(xmlDocument.createTextNode(chapter_langTitle['title']))
-				chapterDisplay.appendChild(xmlDocument.createElement("ChapterLanguage")).appendChild(xmlDocument.createTextNode(chapter_langTitle['language']))
+		if chapter_index >= len(chapters_display):
+			continue
+
+		for chapter_langTitle in sorted(chapters_display[chapter_index], key=lambda k: k['title']):
+			chapterDisplay = chapterAtom.appendChild(xmlDocument.createElement("ChapterDisplay"))
+			chapterDisplay.appendChild(xmlDocument.createElement("ChapterString")).appendChild(xmlDocument.createTextNode(chapter_langTitle['title']))
+			chapterDisplay.appendChild(xmlDocument.createElement("ChapterLanguage")).appendChild(xmlDocument.createTextNode(chapter_langTitle['language']))
 
 	return xmlDocument
 
