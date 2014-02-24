@@ -14,36 +14,27 @@ class ArgumentError(Exception):
 		self.function = function
 
 def printwarning(message):
-	print('\033[93m', message, '\033[0m', file=sys.stdout)
+	print('\033[93m', message, '\033[0m', file=sys.stderr)
 
 def printerror(message):
-	print('\033[91m', message, '\033[0m', file=sys.stdout)
+	print('\033[91m', message, '\033[0m', file=sys.stderr)
 
 def execJobQueue(jobQueue):
-	dvdInfo = None
+	sourceInfo = None
 	for job in jobQueue:
 		if isinstance(job, dict):
 			if job.get('Control', '') == "newVideoSource":
 				print(job['Control'])
-				dvdInfo = None
+				sourceInfo = None
 		else:
-			if dvdInfo is None:
-				dvdInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
-			print(str(job))
-			# print(job['SOURCE_PATH-PART'])
-			# print(job['OUTPUT_PATH-PART'])
-			# optionParser = argparse.ArgumentParser()
-			# optionParser.add_argument('-t', '--threshold', nargs=2)
-			# optionParser.add_argument('-s','--subtitle_convert')
-			# optionParser.add_argument("-T", "--tags_templatefile", type=argparse.FileType('r'))
-			# optionParser.add_argument("-f", "--filename")
+			if sourceInfo is None:
+				sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
 
-			# args = optionParser.parse_args(shlex.split(job['OPTIONS']))
-			# print(shlex.split(job['OPTIONS']))
-
-			# print(helper.getTracksInThreshold(dvdInfo, *args.threshold)[job['SOURCE_TRACKNUMBER']-1])
-			# print(job['CHAPTERS'])
-			# print(job['METADATA'])
+			#print(str(job))
+			print(job.SOURCE_PATH + ":" + str(helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]) + " -> " + job.OUTPUT_PATH)
+			print(job.OPTIONS)
+			print(job.CHAPTERDATA)
+			print(job.METADATA)
 
 if __name__ == "__main__":
 	#BEGIN main
@@ -61,10 +52,12 @@ if __name__ == "__main__":
 		sourcePath = os.path.abspath(os.path.normpath(cmdArgs.source))
 		destinationPath = os.path.abspath(os.path.normpath(cmdArgs.destination))
 		if cmdArgs.batchfile:
+			if cmdArgs.source or cmdArgs.destination:
+				printwarning("The Options --source and -- destination are ignored when used in combinantion with --batchfile")
 			jobQueue = parseBatchfile.parseBatchFile(cmdArgs.batchfile)
 
 		elif cmdArgs.tracksToRip:
-			pass
+			printwarning("not yet implemented")
 
 		execJobQueue(jobQueue)
 	#END main

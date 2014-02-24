@@ -1,4 +1,4 @@
-import string, re, os
+import os
 
 class rippingJob:
 	"""contains all Information for ONE ripping job"""
@@ -7,27 +7,27 @@ class rippingJob:
 		if jobStack_Part is None:
 			self.SOURCE_PATH = ""
 			self.OUTPUT_PATH = ""
-			self.SOURCE_TRACKNUMBER = 0
+			self.TRACKNUMBER = 0
 			self.OPTIONS = {}
 			self.METADATA = {}
 			self.CHAPTERDATA = {}
 		elif isinstance(jobStack_Part, dict):
 			self.SOURCE_PATH = jobStack_Part.get('SOURCE_PATH','')
 			self.OUTPUT_PATH = jobStack_Part.get('OUTPUT_PATH','')
-			self.SOURCE_TRACKNUMBER = jobStack_Part.get('SOURCE_TRACKNUMBER',0)
+			self.TRACKNUMBER = jobStack_Part.get('TRACKNUMBER',0)
 			self.OPTIONS = jobStack_Part.get('OPTIONS','')
 			self.METADATA = jobStack_Part.get('METADATA','')
 			self.CHAPTERDATA = jobStack_Part.get('CHAPTERDATA','')
 
 	def __str__(self):
-		return self.SOURCE_PATH + ":" + str(self.SOURCE_TRACKNUMBER) + " -> "+ self.OUTPUT_PATH + "\n" + "OPTIONS:" + str(self.OPTIONS) + "\n" + "METADATA:" + str(self.METADATA) + "\n" + "CHAPTERDATA:" + str(self.CHAPTERDATA)
+		return self.SOURCE_PATH + ":" + str(self.TRACKNUMBER) + " -> "+ self.OUTPUT_PATH + "\n" + "OPTIONS:" + str(self.OPTIONS) + "\n" + "METADATA:" + str(self.METADATA) + "\n" + "CHAPTERDATA:" + str(self.CHAPTERDATA)
 
 	def __add__(self, other):
 		if isinstance(other, rippingJob):
 			result = rippingJob()
 			result.SOURCE_PATH = os.path.join(self.SOURCE_PATH, other.SOURCE_PATH)
 			result.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.OUTPUT_PATH)
-			result.SOURCE_TRACKNUMBER = other.SOURCE_TRACKNUMBER
+			result.TRACKNUMBER = other.TRACKNUMBER
 			result.OPTIONS.update(self.OPTIONS)
 			result.OPTIONS.update(other.OPTIONS)
 			result.METADATA.update(self.METADATA)
@@ -39,7 +39,7 @@ class rippingJob:
 			result = batchJob()
 			result.SOURCE_PATH = os.path.join(self.SOURCE_PATH, other.get('SOURCE_PATH', ''))
 			result.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.get('OUTPUT_PATH', ''))
-			result.SOURCE_TRACKNUMBER = other.get('SOURCE_TRACKNUMBER')
+			result.TRACKNUMBER = other.get('TRACKNUMBER')
 			result.OPTIONS.update(self.get('OPTIONS'))
 			result.OPTIONS.update(other.get('OPTIONS'))
 			result.METADATA.update(self.get('METADATA'))
@@ -52,7 +52,7 @@ class rippingJob:
 		if isinstance(other, rippingJob):
 			self.SOURCE_PATH = os.path.join(self.SOURCE_PATH, other.SOURCE_PATH)
 			self.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.OUTPUT_PATH)
-			self.SOURCE_TRACKNUMBER = other.SOURCE_TRACKNUMBER
+			self.TRACKNUMBER = other.TRACKNUMBER
 			self.OPTIONS.update(other.OPTIONS)
 			self.METADATA.update(other.METADATA)
 			self.CHAPTERDATA.update(other.CHAPTERDATA)
@@ -60,22 +60,57 @@ class rippingJob:
 		elif isinstance(other, dict):
 			self.SOURCE_PATH = os.path.join(self.SOURCE_PATH, other.get('SOURCE_PATH', ''))
 			self.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.get('OUTPUT_PATH', ''))
-			self.SOURCE_TRACKNUMBER = other.get('SOURCE_TRACKNUMBER')
+			self.TRACKNUMBER = other.get('TRACKNUMBER')
 			self.OPTIONS.update(other.get('OPTIONS'))
 			self.METADATA.update(other.get('METADATA'))
 			self.CHAPTERDATA.update(other.get('CHAPTERDATA'))
 			return self
 
-def chapter_formatRestructure(input):
-	output = []
-	for language in input.keys():
-		for index, title in enumerate(chapters_display[language]):
-			if len(output) <= index:
-				output.append([])
-			output[index].append({'language': language, 'name': title})
-	return output
+from datetime import timedelta
+import xml.dom.minidom
 
-def getTracksInThreshold(dvdSourceInfo, *PARAM_thresholds):
+def generateChaptersXML(chapters_timecode, chapters_display):
+	implementation = xml.dom.minidom.getDOMImplementation()
+	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
+	xmlDocument = implementation.createDocument(None,'Chapters', doctype=doctype)
+
+	xmlDocument.lastChild.appendChild(xmlDocument.createElement("EditionEntry"))
+	chapterEdition = xmlDocument.lastChild.lastChild
+	chapterEdition.appendChild(xmlDocument.createElement("EditionFlagHidden")).appendChild(xmlDocument.createTextNode('0'))
+	chapterEdition.appendChild(xmlDocument.createElement("EditionFlagDefault")).appendChild(xmlDocument.createTextNode('0'))
+
+	chapterStarttime = 0
+	for chapter_index, chapter in enumerate(chapters_timecode):
+		chapterAtom = chapterEdition.appendChild(xmlDocument.createElement("ChapterAtom"))
+		chapterAtom.appendChild(xmlDocument.createElement("ChapterTimeStart")).appendChild(xmlDocument.createTextNode(str(timedelta(seconds=chapterStarttime))))
+		chapterStarttime += chapter['length']
+		chapterAtom.appendChild(xmlDocument.createElement("ChapterFlagHidden")).appendChild(xmlDocument.createTextNode('0'))
+		chapterAtom.appendChild(xmlDocument.createElement("ChapterFlagEnabled")).appendChild(xmlDocument.createTextNode('1'))
+
+		for chapter_langTitle in chapters_display[chapter_index]:
+				chapterDisplay = chapterAtom.appendChild(xmlDocument.createElement("ChapterDisplay"))
+				chapterDisplay.appendChild(xmlDocument.createElement("ChapterString")).appendChild(xmlDocument.createTextNode(chapter_langTitle['title']))
+				chapterDisplay.appendChild(xmlDocument.createElement("ChapterLanguage")).appendChild(xmlDocument.createTextNode(chapter_langTitle['language']))
+
+	return xmlDocument
+
+def chapter_formatRestructure(structInput):
+	#reformat from.
+	#{'eng': ['Chapter 1', 'Chapter 2', 'Chapter 3'], 'ger': ['Kapitel 1', 'Kapitel 2', 'Kapitel 3']}
+	#to:
+	#[{'language': "eng", 'name': "Chapter 1"}, {'language': "ger", 'name': "Kapitel 1"}], [{'language': "eng", 'name': "Chapter 1"}, {'language': "ger", 'name': "Kapitel 1"}], [{'language': "eng", 'name': "Chapter 1"}, {'language': "ger", 'name': "Kapitel 1"}]
+
+	structOutput = []
+	for language in structInput.keys():
+		for index, title in enumerate(structInput[language]):
+			if len(structOutput) <= index:
+				structOutput.append([])
+			structOutput[index].append({'language': language, 'title': title})
+	return structOutput
+
+import string, re
+
+def getTracksInThreshold(diskSourceInfo, *PARAM_thresholds):
 	thresholds = list(PARAM_thresholds)
 	for threshold in thresholds:
 		if not re.match(r'^\d*[mh]?$', threshold):
@@ -93,7 +128,7 @@ def getTracksInThreshold(dvdSourceInfo, *PARAM_thresholds):
 		if 'h' in value:
 			thresholds[i] = int(value.strip(string.ascii_letters)) * 3600
 
-	for index in dvdSourceInfo['track']:
+	for index in diskSourceInfo['track']:
 		if round(index['length']) in range( int(thresholds[0]), int(thresholds[1]) ):
 			tracksInThreshold += [index['ix']]
 	return tracksInThreshold

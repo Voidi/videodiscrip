@@ -1,14 +1,14 @@
 #Example:
 #'@' is used as delimiter
 
-%SOURCE_PATH%@%OUTPUT_PATH%@%OPTIONS%
-	%SOURCE_PATH%@%OUTPUT_PATH%@%OPTIONS%@%Collection_Title-eng%@%Collection_Title-ger%@%CHAPTER_TITLES_eng%@%CHAPTER_TITLES_ger%
-		%SOURCE_PATH%@%OUTPUT_PATH%@%OPTIONS%@%Season_Partnumber%@%Season_Totalparts%@%Season_Title-eng%@%Season_Title-ger%
+%SOURCE_PATH%@%OUTPUT_PATH%@%FILENAME%@%TEMPLATEFILE_TAGS%
+	%SOURCE_PATH%@%OUTPUT_PATH%@%THRESHOLD%@%Collection_Title-eng%@%Collection_Title-ger%@%CHAPTER_TITLES_eng%@%CHAPTER_TITLES_ger%
+		%SOURCE_PATH%@%OUTPUT_PATH%@%Season_Partnumber%@%Season_Totalparts%@%Season_Title-eng%@%Season_Title-ger%
 			%Episode_Partnumber%. %Episode_Title-eng%@%Episode_Title-ger%
 
-/srv/share/tobias/Videos/Serien@/srv/share/tobias/Videos/Serien@--filename "%Episode_Partnumber%. %Episode_Title-eng%_%Episode_Title-ger%.mkv" --tags_templatefile metatags_template.xml
-	Ein Käfig voller Helden@Hogean's Heros_Ein Käfig voller Helden@--threshold 24m 26m@Hogean's Heros@Ein Käfig voller Helden@Chapter 1%Chapter 2%Chapter 3@Kapitel 1%Kapitel 2%Kapitel 3
-		Ein Käfig voller Helden Staffel 1 Disc 1@Staffel 1@--subtitle_convert false@1@6@Season 1@Staffel 1
+/srv/share/tobias/Videos/Serien@/srv/share/tobias/Videos/Serien@%Episode_Partnumber%. %Episode_Title-eng%_%Episode_Title-ger%.mkv@metatags_template.xml
+	Ein Käfig voller Helden@Hogean's Heros_Ein Käfig voller Helden@24m 26m@Hogean's Heros@Ein Käfig voller Helden@Chapter 1%Chapter 2%Chapter 3@Kapitel 1%Kapitel 2%Kapitel 3
+		Ein Käfig voller Helden Staffel 1 Disc 1@Staffel 1@1@6@Season 1@Staffel 1
 			1. The Informer@Kuckuck im Nest
 			2. Hold That Tiger@Operation „Tiger“
 			3. Kommandant of the Year@Kommandant des Jahres
@@ -16,7 +16,7 @@
 			5. The Flight of the Valkyrie@Die Pflicht zu fliehen
 			6. The Prisoner's Prisoner@Das graue Phantom
 			7. German Bridge Is Falling Down@Mit eingebauter Bombe
-		Ein Käfig voller Helden Staffel 1 Disc 2@Staffel 1@--subtitle_convert false@1@6@Season 1@Staffel 1
+		Ein Käfig voller Helden Staffel 1 Disc 2@Staffel 1@1@6@Season 1@Staffel 1
 			8. Movies Are Your Best Escape@Achtung, Aufnahme!
 			9. Go Light on the Heavy Water@Was ist in dem Faß?
 			10. Top Hat, White Tie and Bomb Sights@Kennen Sie Lilli Marleen?
@@ -24,7 +24,7 @@
 			12. The Scientist@In einer Blitzaktion
 			13. Hogan's Hofbrau@Die falschen Fünfziger
 			14. Oil for the Lamps of Hogan@Alles in Öl
-		Ein Käfig voller Helden Staffel 3 Disc 5@Staffel 3@--threshold 24m 28m@3@6@Season 3@Staffel 3
+		Ein Käfig voller Helden Staffel 3 Disc 5@Staffel 3@3@6@Season 3@Staffel 3
 			87. @Die schöne Wilhelmina
 			88. @Allein gegen Zehntausend
 			89. @Shanghai-Lilly

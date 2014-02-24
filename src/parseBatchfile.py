@@ -1,11 +1,9 @@
 #!/usr/bin/env python3.3
 
-##
-#TODO, parse every line and seperate the values into the rippingJob groups
-import re, os
+import re
 from helper import rippingJob
 
-class  Error(Exception):
+class  SyntaxError(Exception):
 	"""Exception raised for nonvalid Batchfile Syntax.
 
 	Attributes:
@@ -38,9 +36,7 @@ def mergeStack_parts(*stackParts):
 
 
 def parseBatchFile(batchFile_handle):
-	#batchFile_handle = open(batchFile, "rt")
 	batchFile_lines = batchFile_handle.readlines()
-	#batchFile_handle.close()
 
 	jobQueue = []
 	jobStack = []
@@ -72,7 +68,7 @@ def parseBatchFile(batchFile_handle):
 
 				#iterate over all variables defined in the template, and check against it's pattern
 				startPos = 0
-				jobStack_Part = {}
+				jobStack_Part = {'OPTIONS':{}, 'METADATA':{}, 'CHAPTERDATA':{}}
 				for index in range(0, len(mappingOrder[depth])):
 					variablePattern = re.compile(mappingOrder[depth][index]['pattern'])
 					match = variablePattern.search(lineOfFile.strip(), startPos)
@@ -81,11 +77,14 @@ def parseBatchFile(batchFile_handle):
 					if startPos == len(lineOfFile):
 						break
 					#append value of current variable to a dictionary holding all data of the current line
-					if mappingOrder[depth][index]['template_string'] == "OPTIONS":
-						#print(mappingOrder[depth][index]['template_string'])
-						jobStack_Part[mappingOrder[depth][index]['template_string']] = {'test': match.group(1)}
+					if mappingOrder[depth][index]['template_string'] in ("SOURCE_PATH", "OUTPUT_PATH"):
+						jobStack_Part.update({mappingOrder[depth][index]['template_string']: match.group(1)})
+					elif mappingOrder[depth][index]['template_string'] in ("FILENAME", "THRESHOLD", "TEMPLATEFILE_TAGS"):
+						jobStack_Part['OPTIONS'].update({mappingOrder[depth][index]['template_string']: match.group(1)})
+					elif mappingOrder[depth][index]['template_string'][:15] == "CHAPTER_TITLES_":
+						jobStack_Part['CHAPTERDATA'].update({mappingOrder[depth][index]['template_string'][15:]: match.group(1).split('%')})
 					else:
-						jobStack_Part[mappingOrder[depth][index]['template_string']] = match.group(1)
+						jobStack_Part['METADATA'][mappingOrder[depth][index]['template_string']] = match.group(1)
 
 				#check if we are on a higher level on the mapping tree then before
 				#also immply that lines have parsed before
@@ -102,11 +101,11 @@ def parseBatchFile(batchFile_handle):
 
 				#append data of current line to stack, holding all data of current higher levels
 				jobStack.append(rippingJob(jobStack_Part))
-				#check if next line isn't on a deeper level
+				#check if this is the last line or if next line isn't on a deeper level
 				if lineNumber == len(batchFile_lines)-1 or depth >= batchFile_lines[lineNumber+1].rstrip().count('\t'):
 					trackCounter += 1
 					mergedStack = mergeStack_parts(*jobStack)
-					mergedStack.SOURCE_TRACKNUMBER = trackCounter
+					mergedStack.TRACKNUMBER = trackCounter
 					jobQueue.append(mergedStack)
 
 	return jobQueue
