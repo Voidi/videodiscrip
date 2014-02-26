@@ -169,22 +169,25 @@ def remove_whitespace_nodes(node, unlink=False):
 
 def fillTemplateString(dictionary, template_string):
 
-	def replaceVariablesfromdictionary(pattern):
-		value = dictionary.get(pattern.strip('%'))
+	def replaceVariablesfromdictionary(variable):
+		value = dictionary.get(variable)
 		if value is None:
-			raise ValueNotFoundError(pattern.strip('%'))
+			raise ValueNotFoundError(variable)
 		return value
 
 	variableFindings = re.findall(r"(?<!\\)%.*?(?<!\\)%", template_string)
 	errorCount = 0
 	for item in variableFindings:
 		try:
-			template_string = template_string.replace(item, replaceVariablesfromdictionary(item))
+			template_string = template_string.replace(item, replaceVariablesfromdictionary(item.strip('%')))
 		except ValueNotFoundError as error:
 			template_string = template_string.replace(item, '')
 			errorCount += 1
+
 	if len(variableFindings) and errorCount >= len(variableFindings):
 		raise ValueNotFoundError(errorCount)
+
+	return template_string
 
 
 def createMetadataXML(metadata, template_file):
@@ -202,7 +205,7 @@ def createMetadataXML(metadata, template_file):
 	for child in iterate_children(generatedDocument.documentElement):
 		if child.nodeType == dom.Node.TEXT_NODE:
 			try:
-				fillTemplateString(metadata, child.data)
+				child.data = fillTemplateString(metadata, child.data)
 			except ValueNotFoundError as error:
 				grandgrandParent = child.parentNode.parentNode.parentNode
 				grandgrandParent.removeChild(child.parentNode.parentNode)
