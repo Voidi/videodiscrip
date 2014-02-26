@@ -165,18 +165,34 @@ def remove_whitespace_nodes(node, unlink=False):
 		if unlink:
 			node.unlink()
 
+
+
+def fillTemplateString(dictionary, template_string):
+
+	def replaceVariablesfromdictionary(pattern):
+		value = dictionary.get(pattern.strip('%'))
+		if value is None:
+			raise ValueNotFoundError(pattern.strip('%'))
+		return value
+
+	variableFindings = re.findall(r"(?<!\\)%.*?(?<!\\)%", template_string)
+	errorCount = 0
+	for item in variableFindings:
+		try:
+			template_string = template_string.replace(item, replaceVariablesfromdictionary(item))
+		except ValueNotFoundError as error:
+			template_string = template_string.replace(item, '')
+			errorCount += 1
+	if len(variableFindings) and errorCount >= len(variableFindings):
+		raise ValueNotFoundError(errorCount)
+
+
 def createMetadataXML(metadata, template_file):
 	"""Generates XML structure for Metatags"""
 	implementation = dom.getDOMImplementation()
 	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
 	generatedDocument = implementation.createDocument(None,'Tags', doctype=doctype)
 	templateDocument = dom.parse(template_file)
-
-	def templateValueReplace(matchobj):
-		value = metadata.get(matchobj.strip('%'))
-		if value is None:
-			raise ValueNotFoundError(matchobj.strip('%'))
-		return value
 
 	remove_whitespace_nodes(templateDocument.documentElement, True)
 	for index, child in enumerate(templateDocument.documentElement.childNodes):
@@ -185,16 +201,9 @@ def createMetadataXML(metadata, template_file):
 
 	for child in iterate_children(generatedDocument.documentElement):
 		if child.nodeType == dom.Node.TEXT_NODE:
-			variableFindings = re.findall(r"(?<!\\)%.*?(?<!\\)%", child.data)
-			errorCount = 0
-			for item in variableFindings:
-				try:
-					child.data = child.data.replace(item, templateValueReplace(item))
-					#re.sub(r"(?<!\\)%.*?(?<!\\)%", templateValueReplace, child.data)
-				except ValueNotFoundError as e:
-					child.data = child.data.replace(item, '')
-					errorCount += 1
-			if len(variableFindings) and errorCount >= len(variableFindings):
+			try:
+				fillTemplateString(metadata, child.data)
+			except ValueNotFoundError as error:
 				grandgrandParent = child.parentNode.parentNode.parentNode
 				grandgrandParent.removeChild(child.parentNode.parentNode)
 
