@@ -1,4 +1,14 @@
-import os
+import os, string, re
+from datetime import timedelta
+import xml.dom.minidom as dom
+
+class  ValueNotFoundError(Exception):
+	"""Exception raised for nonexistent dictionary key.
+	Attributes:
+		key -- dictionary key
+	"""
+	def __init__(self, key):
+		self.key = key
 
 class rippingJob:
 	"""contains all Information for ONE ripping job"""
@@ -66,12 +76,9 @@ class rippingJob:
 			self.CHAPTERDATA.update(other.get('CHAPTERDATA'))
 			return self
 
-from datetime import timedelta
-import xml.dom.minidom
-
 def generateChaptersXML(chapters_timecode, chapters_display):
 	#chapterstime_code must be the content of 'chapter' from the lsdvd info
-	implementation = xml.dom.minidom.getDOMImplementation()
+	implementation = dom.getDOMImplementation()
 	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
 	xmlDocument = implementation.createDocument(None,'Chapters', doctype=doctype)
 
@@ -112,8 +119,6 @@ def chapter_formatRestructure(structInput):
 			structOutput[index].append({'language': language, 'title': title})
 	return structOutput
 
-import string, re
-
 def getTracksInThreshold(diskSourceInfo, *PARAM_thresholds):
 	thresholds = list(PARAM_thresholds)
 	for threshold in thresholds:
@@ -136,3 +141,61 @@ def getTracksInThreshold(diskSourceInfo, *PARAM_thresholds):
 		if round(index['length']) in range( int(thresholds[0]), int(thresholds[1]) ):
 			tracksInThreshold += [index['ix']]
 	return tracksInThreshold
+
+def iterate_children(parent, tag=None):
+	"""returns an iterator for recursivly all children of an element"""
+
+	child = parent.firstChild
+	while child != None:
+		yield child
+		if len(child.childNodes):
+			for childOfChild in list(iterate_children(child)):
+				yield childOfChild
+		child = child.nextSibling
+
+def remove_whitespace_nodes(node, unlink=False):
+	"""Removes all of the whitespace-only text decendants of a DOM node."""
+
+	remove_list = []
+	for child in iterate_children(node):
+		if child.nodeType == dom.Node.TEXT_NODE and not child.data.strip():
+			remove_list.append(child)
+	for node in remove_list:
+		node.parentNode.removeChild(node)
+		if unlink:
+			node.unlink()
+
+def createMetadataXML(metadata, template_file):
+	"""Generates XML structure for Metatags"""
+	implementation = dom.getDOMImplementation()
+	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
+	generatedDocument = implementation.createDocument(None,'Tags', doctype=doctype)
+	templateDocument = dom.parse(template_file)
+
+	def templateValueReplace(matchobj):
+		value = metadata.get(matchobj.strip('%'))
+		if value is None:
+			raise ValueNotFoundError(matchobj.strip('%'))
+		return value
+
+	remove_whitespace_nodes(templateDocument.documentElement, True)
+	for index, child in enumerate(templateDocument.documentElement.childNodes):
+		x = generatedDocument.importNode(templateDocument.documentElement.childNodes[index], True)
+		generatedDocument.documentElement.appendChild(x)
+
+	for child in iterate_children(generatedDocument.documentElement):
+		if child.nodeType == dom.Node.TEXT_NODE:
+			variableFindings = re.findall(r"(?<!\\)%.*?(?<!\\)%", child.data)
+			errorCount = 0
+			for item in variableFindings:
+				try:
+					child.data = child.data.replace(item, templateValueReplace(item))
+					#re.sub(r"(?<!\\)%.*?(?<!\\)%", templateValueReplace, child.data)
+				except ValueNotFoundError as e:
+					child.data = child.data.replace(item, '')
+					errorCount += 1
+			if len(variableFindings) and errorCount >= len(variableFindings):
+				grandgrandParent = child.parentNode.parentNode.parentNode
+				grandgrandParent.removeChild(child.parentNode.parentNode)
+
+	return generatedDocument
