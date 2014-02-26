@@ -65,13 +65,13 @@
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String> %Episode_Title-eng%</String>
+			<String>%Episode_Title-eng%</String>
 			<TagLanguage>eng</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>
 		<Simple>
 			<Name>TITLE</Name>
-			<String> %Episode_Title-ger%</String>
+			<String>%Episode_Title-ger%</String>
 			<TagLanguage>ger</TagLanguage>
 			<DefaultLanguage>0</DefaultLanguage>
 		</Simple>

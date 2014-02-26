@@ -79,7 +79,7 @@ def parseBatchFile(batchFile_handle):
 					#append value of current variable to a dictionary holding all data of the current line
 					if mappingOrder[depth][index]['template_string'] in ("SOURCE_PATH", "OUTPUT_PATH"):
 						jobStack_Part.update({mappingOrder[depth][index]['template_string']: match.group(1)})
-					elif mappingOrder[depth][index]['template_string'] in ("FILENAME", "THRESHOLD", "TEMPLATEFILE_TAGS"):
+					elif mappingOrder[depth][index]['template_string'] in ("OUTPUT_FILENAME", "THRESHOLD", "METATAGS_TEMPLATEFILE"):
 						jobStack_Part['OPTIONS'].update({mappingOrder[depth][index]['template_string']: match.group(1)})
 					elif mappingOrder[depth][index]['template_string'][:15] == "CHAPTER_TITLES_":
 						jobStack_Part['CHAPTERDATA'].update({mappingOrder[depth][index]['template_string'][15:]: match.group(1).split('%')})

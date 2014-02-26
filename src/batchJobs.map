@@ -1,7 +1,7 @@
 #Example:
 #'@' is used as delimiter
 
-%SOURCE_PATH%@%OUTPUT_PATH%@%FILENAME%@%TEMPLATEFILE_TAGS%
+%SOURCE_PATH%@%OUTPUT_PATH%@%OUTPUT_FILENAME%@%METATAGS_TEMPLATEFILE%
 	%SOURCE_PATH%@%OUTPUT_PATH%@%THRESHOLD%@%Collection_Title-eng%@%Collection_Title-ger%@%CHAPTER_TITLES_eng%@%CHAPTER_TITLES_ger%
 		%SOURCE_PATH%@%OUTPUT_PATH%@%Season_Partnumber%@%Season_Totalparts%@%Season_Title-eng%@%Season_Title-ger%
 			%Episode_Partnumber%. %Episode_Title-eng%@%Episode_Title-ger%

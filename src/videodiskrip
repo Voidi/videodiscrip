@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.3
 
-import os, sys, dvdtrackrip, parseBatchfile, shutil, argparse, shlex, helper
+import os, sys, dvdtrackrip, parseBatchfile, shutil, argparse, helper
 
 class ArgumentError(Exception):
 	"""Exception raised when calling a videodiskrip function with nonvalid Arguments.
@@ -29,9 +29,12 @@ def execJobQueue(jobQueue):
 		else:
 			if sourceInfo is None:
 				sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
-
+			#print(sourceInfo)
 			#print(str(job))
-			print(job.SOURCE_PATH + ":" + str(helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]) + " -> " + job.OUTPUT_PATH)
+			sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
+			xmlData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
+
+			print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH)
 			print(job.OPTIONS)
 			print(job.CHAPTERDATA)
 			print(job.METADATA)
