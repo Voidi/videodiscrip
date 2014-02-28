@@ -190,7 +190,7 @@ def fillTemplateString(dictionary, template_string):
 	return template_string
 
 
-def createMetadataXML(metadata, template_file):
+def createMetadataXML(template_file, metadata):
 	"""Generates XML structure for Metatags"""
 	implementation = dom.getDOMImplementation()
 	doctype = implementation.createDocumentType('Chapters', '', 'matroskachapters.dtd')
