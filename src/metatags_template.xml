@@ -42,7 +42,7 @@
 		</Simple>
 		<Simple>
 			<Name>DATE_RELEASE</Name>
-			<String>%RelaseDate%</String>
+			<String>%ReleaseDate%</String>
 			<TagLanguage>und</TagLanguage>
 			<DefaultLanguage>1</DefaultLanguage>
 		</Simple>

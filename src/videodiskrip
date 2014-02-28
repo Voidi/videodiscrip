@@ -19,26 +19,6 @@ def printwarning(message):
 def printerror(message):
 	print('\033[91m', message, '\033[0m', file=sys.stderr)
 
-def execJobQueue(jobQueue):
-	sourceInfo = None
-	for job in jobQueue:
-		if isinstance(job, dict):
-			if job.get('Control', '') == "newVideoSource":
-				print(job['Control'])
-				sourceInfo = None
-		else:
-			if sourceInfo is None:
-				sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
-			#print(sourceInfo)
-			#print(str(job))
-			sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
-			xmlData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
-
-			print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH)
-			print(job.OPTIONS)
-			print(job.CHAPTERDATA)
-			print(job.METADATA)
-
 if __name__ == "__main__":
 	#BEGIN main
 
@@ -50,19 +30,39 @@ if __name__ == "__main__":
 		cmdArg_Parser.add_argument("-t", "--tracksToRip", metavar="TRACK", nargs='*', type=int, help="the Track on the DVD to rip; if omit all tracks are ripped")
 
 		cmdArgs = cmdArg_Parser.parse_args()
-		#print(cmdArgs)
 
 		sourcePath = os.path.abspath(os.path.normpath(cmdArgs.source))
 		destinationPath = os.path.abspath(os.path.normpath(cmdArgs.destination))
+
 		if cmdArgs.batchfile:
 			if cmdArgs.source or cmdArgs.destination:
 				printwarning("The Options --source and -- destination are ignored when used in combinantion with --batchfile")
 			jobQueue = parseBatchfile.parseBatchFile(cmdArgs.batchfile)
-
 		elif cmdArgs.tracksToRip:
 			printwarning("not yet implemented")
 
-		execJobQueue(jobQueue)
+		sourceInfo = None
+		for job in jobQueue:
+			if isinstance(job, dict):
+				if job.get('Control', '') == "newVideoSource":
+					print(job['Control'])
+					sourceInfo = None
+			else:
+				if sourceInfo is None:
+					sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
+
+				sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
+				outputFilename = helper.fillTemplateString(job.METADATA, job.OPTIONS['OUTPUT_FILENAME'])
+				chaptersXMLData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
+				metadataXMLData = helper.createMetadataXML(job.METADATA, job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
+
+				print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
+				print(job.OPTIONS)
+				print(job.CHAPTERDATA)
+				print(job.METADATA)
+
+				muxedOutput = ""
+
 	#END main
 
 	except FileNotFoundError as error:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 		printerror("Context:" + error.args[0])
 		printerror("File:" + error.args[1])
 		if error.args[0] is "dvdtrackrip":
-			printerror(error.args[1] + "is missing, but it should be there thus converters seemd to work correct")
+			printerror(error.args[1] + "is missing, but should be there thus converters seemed not work correctly")
 
 	except shutil.Error as error:
 		printwarning(error.args[0])
