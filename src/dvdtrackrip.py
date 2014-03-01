@@ -87,7 +87,7 @@ def runSubProcess(command):
 	if process.returncode is not 0:
 		raise SubProcessError(command, process.returncode, stderr)
 
-def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, chaptersData=None, tagsData=None):
+def ripTrack(dvdsource_Path, absolutetrack, workspace, chaptersData=None, tagsData=None):
 	trackinfo = getDvdTrackInfo(dvdsource_Path, absolutetrack)
 	os.chdir(workspace)
 
@@ -112,12 +112,8 @@ def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, cha
 		mkvmerge_arguments +=["--default-track", str(vobtracks['audio'][index])+":no", "--forced-track", str(vobtracks['audio'][index])+":no", "--language", str(vobtracks['audio'][index])+":"+audiostream['langcode']]
 	mkvmerge_arguments +=[ "-a", ','.join(vobtracks['audio']), "-d", "0", "-S", "-T", "--no-global-tags", "--no-chapters", workspace+"/videotrack.vob" ]
 
-	if subtitleConvert is True:
-		for subtitlestream in trackinfo['track'][0]['subp']:
-			mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters",  workspace+"/subtitles_"+subtitlestream['langcode']+".srt" ]
-	else:
-		for subtitlestream in trackinfo['track'][0]['subp']:
-			mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters",  workspace+"/subtitles_"+subtitlestream['langcode']+".idx" ]
+	for subtitlestream in trackinfo['track'][0]['subp']:
+		mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters",  workspace+"/subtitles_"+subtitlestream['langcode']+".idx" ]
 
 	#use the XML data from parameters to write metadata in files
 	if chaptersData is not None:
@@ -134,7 +130,7 @@ def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, cha
 	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
 	os.chdir("..")
 
-def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, subtitleConvert=None, chaptersData=None, tagsData=None):
+def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, chaptersData=None, tagsData=None):
 	if os.environ.get('TEMP'):
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
@@ -142,7 +138,7 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, subtitleConvert
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 
 	try:
-		ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=subtitleConvert, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(dvdsource_Path, absolutetrack, workspace, chaptersData=chaptersData, tagsData=tagsData)
 		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
 			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
 		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
