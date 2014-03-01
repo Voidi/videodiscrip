@@ -39,9 +39,6 @@ for name in commands:
 	if shutil.which(name) is None:
 		raise RuntimeError(name + " not found. Check if installed and in PATH variable")
 	commands[name] = shutil.which(name)
-commands['vobsub2srt'] = shutil.which("vobsub2srt")
-commands['aspell'] = shutil.which("aspell")
-
 
 #get Infos with lsdvd , returns pythonstructure
 def getDvdTrackInfo(dvdsource, absolutetrack=0):
@@ -110,24 +107,6 @@ def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, cha
 		mencoder_arguments +=["-slang", subtitlestream['langcode'], "-vobsuboutindex", "0", "-vobsuboutid", subtitlestream['langcode']]
 		mencoder_arguments +=["-vobsubout", workspace+"/subtitles_"+subtitlestream['langcode']]
 		mencoder_stdout = runSubProcess([commands['mencoder']] + mencoder_arguments)
-
-		#convert Vobsub to SRT
-		if subtitleConvert is True:
-			try:
-				vobsub2srt_arguments = ["-lang", subtitlestream['langcode'], workspace+"/subtitles_"+subtitlestream['langcode']]
-				runSubProcess([commands['vobsub2srt']] + vobsub2srt_arguments)
-			except SubProcessError as error:
-				if error.args[1] is 1:
-					#TODO: maybe? implement own exception: dependency not found
-					raise
-				else:
-					raise
-
-			try:
-				aspell_arguments = ["aspell", "--lang="+subtitlestream['langcode'], "check",  workspace+"/subtitles_"+subtitlestream['langcode']+".srt"]
-				runSubProcess([commands['aspell']] + aspell_arguments)
-			except SubProcessError as error:
-				raise
 
 	#get track ids from the ripped vob file, used in mkvmerge
 	vobtracks = getVobTracks( workspace+"/videotrack.vob" )
