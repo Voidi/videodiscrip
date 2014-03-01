@@ -135,7 +135,10 @@ def ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=None, cha
 	os.chdir("..")
 
 def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, subtitleConvert=None, chaptersData=None, tagsData=None):
-	tempfile.tempdir = os.path.dirname(destinationPath)
+	if os.environ.get('TEMP'):
+		tempfile.tempdir = os.environ.get('TEMP')
+	else:
+		tempfile.tempdir = os.path.dirname(destinationPath)
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 
 	try:
