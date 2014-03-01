@@ -79,17 +79,18 @@ def runSubProcess(command):
 	stdoutfile = open("stdout.log", 'a')
 	stdoutfile.write( "Running:" + ' '.join(command) + "\n" )
 	process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	process.wait()
 	stdout= process.stdout.read()
 	stderr= process.stderr.read()
-	process.wait()
 	stdoutfile.write(stdout + "\n")
 	stdoutfile.close()
 	if process.returncode is not 0:
 		raise SubProcessError(command, process.returncode, stderr)
+	return stdout
 
-def ripTrack(dvdsource_Path, absolutetrack, workspace, chaptersData=None, tagsData=None):
+def ripTrack(dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
 	trackinfo = getDvdTrackInfo(dvdsource_Path, absolutetrack)
-	os.chdir(workspace)
+	workspace = os.path.abspath(os.path.curdir)
 
 	#Rip media data from dvd without any conversion to a vob file
 	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", workspace+"/videotrack.vob" ]
@@ -128,17 +129,19 @@ def ripTrack(dvdsource_Path, absolutetrack, workspace, chaptersData=None, tagsDa
 		mkvmerge_arguments += [ "--global-tags", workspace+"/tags.xml" ]
 
 	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
-	os.chdir("..")
 
-def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, chaptersData=None, tagsData=None):
+
+def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=None, tagsData=None):
 	if os.environ.get('TEMP'):
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
 		tempfile.tempdir = os.path.dirname(destinationPath)
+
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
+	os.chdir(workspace)
 
 	try:
-		ripTrack(dvdsource_Path, absolutetrack, workspace, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
 		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
 			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
 		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
@@ -151,3 +154,5 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, chaptersData=No
 		raise
 	else:
 		shutil.rmtree(workspace)
+
+	os.chdir("..")
