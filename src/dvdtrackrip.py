@@ -32,13 +32,7 @@ class DvdSourceError(Exception):
 		self.source = source
 		self.subprocess_stderror = subprocess_stderror
 
-#abort if essential commands not found, vobsub2srt and aspell are optinal
-#TODO extended checking for vobsub2srt, aspell and corresponding language packages
-commands = {'lsdvd': "", 'mplayer': "", 'mencoder': "", 'mkvmerge' : ""}
-for name in commands:
-	if shutil.which(name) is None:
-		raise RuntimeError(name + " not found. Check if installed and in PATH variable")
-	commands[name] = shutil.which(name)
+commands = {'lsdvd': "lsdvd", 'mplayer': "mplayer", 'mencoder': "mencoder", 'mkvmerge' : "mkvmerge"}
 
 #get Infos with lsdvd , returns pythonstructure
 def getDvdTrackInfo(dvdsource, absolutetrack=0):
