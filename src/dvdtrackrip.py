@@ -130,27 +130,17 @@ def ripTrack(dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
 
 	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
 
-<<<<<<< HEAD
-
 def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=None, tagsData=None):
 	if os.environ.get('TEMP'):
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
 		tempfile.tempdir = os.path.dirname(destinationPath)
 
-=======
-def dvdtrackrip(dvdsource_Path, absolutetrack, destination_Path, subtitleConvert=None, chaptersData=None, tagsData=None):
-	tempfile.tempdir = os.path.dirname(destinationPath)
->>>>>>> refactor_Batchmode_experimental
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 	os.chdir(workspace)
 
 	try:
-<<<<<<< HEAD
 		ripTrack(dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
-=======
-		ripTrack(dvdsource_Path, absolutetrack, workspace, subtitleConvert=subtitleConvert, chaptersData=chaptersData, tagsData=tagsData)
->>>>>>> refactor_Batchmode_experimental
 		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
 			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
 		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
