@@ -1,167 +1,79 @@
 #!/usr/bin/env python3.3
 
-import os, sys, dvdtrackrip, string, re, argparse, shutil
+import os, sys, dvdtrackrip, parseBatchfile, shutil, argparse, helper
 
-class MapParseError(Exception):
-	"""Exception raised for nonvalid mapfile Sysntax.
+class ArgumentError(Exception):
+	"""Exception raised when calling a videodiskrip function with nonvalid Arguments.
 
 	Attributes:
-		linenumber --
-		line -- Content of Line where error occurs
-
+		function ---
+		errorMessage --
 	"""
-	def __init__(self, linenumber, line):
-		self.linenumber = linenumber
-		self.line = line
+	def __init__(self, function, errorMessage):
+		self.errorMessage = errorMessage
+		self.function = function
 
 def printwarning(message):
-	sys.stderr.write('\033[93m' + message + '\033[0m' '\n')
+	print('\033[93m', message, '\033[0m', file=sys.stderr)
 
 def printerror(message):
-	sys.stderr.write('\033[91m' + message + '\033[0m' + '\n')
-
-def getTracksInThreshold(dvdSourceInfo, thresholds):
-	#threshold must be an array, but at the moment only the two first values are used
-	tracksInThreshold = []
-	#if only one threshold is passed, the value is used for both borders
-	if len(thresholds) is 1:
-		thresholds.append(str(int(thresholds[0].strip(string.ascii_letters)) + 1)+thresholds[0].strip(string.digits))
-	#if the threshold contains a 'm', 'h' suffixes the values are counted as minutes or hours
-	#for comparing with lsdvd these are converted in seconds
-	for i, value in enumerate(thresholds):
-		if 'm' in value:
-			thresholds[i] = int(value.strip(string.ascii_letters)) * 60
-		if 'h' in value:
-			thresholds[i] = int(value.strip(string.ascii_letters)) * 3600
-
-	for index in dvdSourceInfo['track']:
-		if round(index['length']) in range( int(thresholds[0]), int(thresholds[1]) ):
-			tracksInThreshold += [index['ix']]
-	return tracksInThreshold
-
-def parseMapFile(mapfile):
-	source_dest_file = open(mapfile, "r")
-	source_dest_data = source_dest_file.readlines()
-	source_dest_file.close()
-	source_dest_map = []
-	entryCounter = 0
-
-	for i, line in enumerate(source_dest_data):
-		if not re.search(r"^\ *#", line):
-
-			#DVD Source Infos
-			match = re.search(r"^([^\t@]*)@([^@]*)@(.*)$", line)
-			if match:
-				source_dest_map += [{'source_part': match.group(1), 'options': match.group(2), 'dest_part': match.group(3), 'tracks': []}]
-				entryCounter = 0
-
-				parser = argparse.ArgumentParser()
-				parser.add_argument('-t', '--threshold', nargs='*')
-				args = parser.parse_args(source_dest_map[-1]['options'].split())
-
-				dvdSourceInfo = dvdtrackrip.getDvdTrackInfo(os.path.join(dvdsource, source_dest_map[-1]['source_part'].strip('/')), 0)
-				for index, absolutetrack in enumerate(getTracksInThreshold(dvdSourceInfo, args.threshold)):
-					source_dest_map[-1]['tracks'] += [{'absolutetrack': absolutetrack, 'basename': str(absolutetrack)}]
-				#print(source_dest_map[-1]['tracks'])
-
-			#detailed per Trackinfos
-			match = re.search(r"^\t([^@]*)@([^@]*)@(.*)$", line)
-			if match:
-				try:
-					source_dest_map[-1]['tracks'] += [{'absolutetrack': match.group(1), 'options': match.group(2), 'basename': match.group(3)}]
-				except (IndexError, TypeError):
-					raise MapParseError(i, line)
-
-			#simple per Trackinfos
-			match = re.search(r"^\t([^@\n]*)$", line)
-			if match:
-				try:
-					source_dest_map[-1]['tracks'][entryCounter]['basename'] = match.group(1).strip()
-					entryCounter += 1
-				except (IndexError, TypeError):
-					raise MapParseError(i, line)
-
-			#Blanklines define the end of a dvdsource
-			match = re.search(r"^\s$", line)
-			if match:
-				source_dest_map += [None]
-
-	for dvdstructure in source_dest_map:
-		if dvdstructure is None:
-			source_dest_map.remove(dvdstructure)
-	return source_dest_map
-
+	print('\033[91m', message, '\033[0m', file=sys.stderr)
 
 if __name__ == "__main__":
 	#BEGIN main
+
 	try:
-		parser = argparse.ArgumentParser(description='rip a specific track from a DVD Strukture into a mkv container without reencoding' )
+		cmdArg_Parser = argparse.ArgumentParser(description="rip specific track(s) from a DVD structure into .mkv container(s) without reencoding")
+		cmdArg_Parser.add_argument("-s", "--source", default=".", metavar="DISKSOURCE", help="the source strukture to rip from")
+		cmdArg_Parser.add_argument("-d", "--destination", default=".", help="Directory where to save the ripped file")
+		cmdArg_Parser.add_argument("-b", "--batchfile", metavar="BATCHFILE", help="the file with jobs for batch mode and data to map for the items", type=argparse.FileType('r'))
+		cmdArg_Parser.add_argument("-t", "--tracksToRip", metavar="TRACK", nargs='*', type=int, help="the Track on the DVD to rip; if omit all tracks are ripped")
 
-		parser.add_argument("-s", "--source", metavar="DVDSOURCE", help="the DVD sourcestrukture where to rip from")
-		parser.add_argument("-m","--mapfile", metavar="MAPFILE", help="a Mapfile")
+		cmdArgs = cmdArg_Parser.parse_args()
 
-		parser.add_argument("-t", "--tracksToRip", metavar="TRACK", nargs='*', type=int, help="the Track on the DVD to rip; if omit all tracks are ripped")
-		parser.add_argument("-n", "--name", default="", help="Name of the Track (without extension), or a Suffix for a whole disk")
+		sourcePath = os.path.abspath(os.path.normpath(cmdArgs.source))
+		destinationPath = os.path.abspath(os.path.normpath(cmdArgs.destination))
 
-		parser.add_argument("-d", "--destination", default=".", help="Directory where to save the ripped file")
-		#parser.add_argument("-v", "--verbose", action="count", default=0, help="set verbosity level [default: %(default)s]")
-		args = parser.parse_args()
-		#print(args)
+		if cmdArgs.batchfile:
+			if cmdArgs.source or cmdArgs.destination:
+				printwarning("The Options --source and -- destination are ignored when used in combinantion with --batchfile")
+			jobQueue = parseBatchfile.parseBatchFile(cmdArgs.batchfile)
+		elif cmdArgs.tracksToRip:
+			printwarning("not yet implemented")
 
-		if args.source is None and args.mapfile is None:
-			parser.print_usage()
-			parser.exit(status=1, message="No arguments were passed")
+		sourceInfo = None
+		for job in jobQueue:
+			if isinstance(job, dict):
+				if job.get('Control', '') == "newVideoSource":
+					print(job['Control'])
+					sourceInfo = None
+			else:
+				if sourceInfo is None:
+					sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
 
-		if args.source is None:
-			dvdsource = "."
-		dvdsource = os.path.abspath(dvdsource)
+				sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
+				outputFilename = helper.fillTemplateString(job.METADATA, job.OPTIONS['OUTPUT_FILENAME'])
+				chaptersXMLData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
+				metadataXMLData = helper.createMetadataXML(job.METADATA, job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
 
-		if os.access(args.destination, os.F_OK) and os.path.isdir(args.destination):
-			destination = os.path.abspath(args.destination)
-		else:
-			raise FileNotFoundError("destination_directory:",destination)
+				print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
+				print(job.OPTIONS)
+				print(job.CHAPTERDATA)
+				print(job.METADATA)
 
-		if args.mapfile is not None:
-			for dvdstructure in parseMapFile(args.mapfile):
-				for track in dvdstructure['tracks']:
-
-					if not os.path.lexists( os.path.join(destination, dvdstructure['dest_part'].strip('/')) ):
-						os.makedirs(os.path.join(destination, dvdstructure['dest_part'].strip('/')), exist_ok=True)
-
-					print( "Ripping Track %d\tfrom DVD-Structure '%s'\tas '%s.mkv'\to '%s'" % \
-						(track['absolutetrack'], os.path.join(dvdsource, dvdstructure['source_part']), \
-						track['basename'], os.path.join(destination, dvdstructure['dest_part'])) )
-
-					try:
-						dvdtrackrip.dvdtrackrip( os.path.join(dvdsource, dvdstructure['source_part'].strip('/')), track['absolutetrack'], os.path.join(destination, dvdstructure['dest_part'], track['basename'] + ".mkv") )
-					except shutil.Error as error:
-						print("\033[92m", error.args[0], "\033[0m", file=sys.stderr)
-
-		else:
-			absolutetrack = args.tracksToRip
-			episodebasename	= args.name
-
-			dvdSourceInfo = dvdtrackrip.getDvdTrackInfo(dvdsource, 0)
-			if args.tracksToRip is None:
-				absolutetrack = list(range(1, len(dvdSourceInfo['track'])+1))
-
-			for x in absolutetrack:
-				if args.name is "" or len(absolutetrack) > 1:
-					episodebasename = str(x)+"."+args.name
-
-				#colored heading for current sequence
-				print( "Ripping Track %d\tfrom DVD-Structure '%s'\tas '%s.mkv'\to '%s'" % (x, dvdsource, episodebasename, destination) )
-
-				try:
-					dvdtrackrip.dvdtrackrip(dvdsource, x, destination+ "/" +episodebasename + ".mkv")
-				except shutil.Error as error:
-					print("\033[92m", error.args[0], "\033[0m", file=sys.stderr)
+				muxedOutput = ""
 
 	#END main
 
-	except MapParseError as error:
-		printerror("The mapfile seems not be valid!")
-		printerror("Linenumber:" + str(error.args[0]) +  "->" + error.args[1])
+	except FileNotFoundError as error:
+		printerror("FileNotFound Error")
+		printerror("Context:" + error.args[0])
+		printerror("File:" + error.args[1])
+		if error.args[0] is "dvdtrackrip":
+			printerror(error.args[1] + "is missing, but should be there thus converters seemed not work correctly")
+
+	except shutil.Error as error:
+		printwarning(error.args[0])
 
 	except dvdtrackrip.DvdTrackError as error:
 		printerror("In Dvd source '" + error.args[0] + "' exists no Track number " + error.args[1])
@@ -170,17 +82,7 @@ if __name__ == "__main__":
 		printerror("The path '" + error.args[0] + "' contains no valid DVD source")
 		printerror("stderr: \n" + error.args[1])
 
-	except FileNotFoundError as error:
-		printerror("FileNotFound Error")
-		printerror("Context:" + error.args[0])
-		printerror("File:" + error.args[1])
-		if error.args[0] is "dvdtrackrip":
-			printerror(error.args[1] + "is missing, but it should be there thus converters seemd to work correct")
-
-	except shutil.Error as error:
-		printwarning(error.args[0])
-
-	except SubProcessError as error:
+	except dvdtrackrip.SubProcessError as error:
 		printerror( "\nCommand:" + error.args[0] )
 		printerror( "\nSubprocessor stderr: " + error.args[1] )
 		printerror( "\nReturncode:" + str(error.args[2]) )
