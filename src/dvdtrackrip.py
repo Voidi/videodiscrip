@@ -88,9 +88,8 @@ def runSubProcess(command):
 		raise SubProcessError(command, process.returncode, stderr)
 	return stdout
 
-def ripTrack(dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
+def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
 	trackinfo = getDvdTrackInfo(dvdsource_Path, absolutetrack)
-	workspace = os.path.abspath(os.path.curdir)
 
 	#Rip media data from dvd without any conversion to a vob file
 	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", os.path.join(workspace, "videotrack.vob") ]
@@ -134,12 +133,12 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 	if os.environ.get('TEMP'):
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
-		tempfile.tempdir = os.path.dirname(destinationPath)
+		tempfile.tempdir = os.path.dirname(os.path.abspath(destinationPath))
+
 	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
 
-	os.chdir(workspace)
 	try:
-		ripTrack(dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
 	except SubProcessError as error:
 		errorlog = open(os.path.join(workspace, "error.log"), 'w')
 		errorlog.write( "\nCommand:" + error.args[0])
@@ -151,5 +150,4 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 		# if not os.path.join(workspace, "muxedoutput.mkv"):
 		# 	raise FileNotFoundError("dvdtrackrip:", os.path.join(workspace, "muxedoutput.mkv"))
 		return os.path.join(workspace, "muxedoutput.mkv")
-	finally:
-		os.chdir("..")
+
