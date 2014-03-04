@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.3
 
-import os, ast, re, subprocess, tempfile, shutil
+import os, ast, re, subprocess, tempfile
 
 class SubProcessError(Exception):
 	"""Exception raised forfor a non valid DVD structure.
@@ -93,40 +93,40 @@ def ripTrack(dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
 	workspace = os.path.abspath(os.path.curdir)
 
 	#Rip media data from dvd without any conversion to a vob file
-	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", workspace+"/videotrack.vob" ]
+	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", os.path.join(workspace, "videotrack.vob") ]
 	mplayer_stdout = runSubProcess([commands['mplayer']] + mplayer_arguments)
 
 	#for each detected Vobsub stream rip von dvdstructure
 	for subtitlestream in trackinfo['track'][0]['subp']:
 		mencoder_arguments =["-quiet", "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-nosound", "-ovc", "frameno", "-o", "/dev/null"]
 		mencoder_arguments +=["-slang", subtitlestream['langcode'], "-vobsuboutindex", "0", "-vobsuboutid", subtitlestream['langcode']]
-		mencoder_arguments +=["-vobsubout", workspace+"/subtitles_"+subtitlestream['langcode']]
+		mencoder_arguments +=["-vobsubout", os.path.join(workspace, "subtitles_" + subtitlestream['langcode'])]
 		mencoder_stdout = runSubProcess([commands['mencoder']] + mencoder_arguments)
 
 	#get track ids from the ripped vob file, used in mkvmerge
-	vobtracks = getVobTracks( workspace+"/videotrack.vob" )
+	vobtracks = getVobTracks( os.path.join(workspace, "videotrack.vob") )
 
-	mkvmerge_arguments = [ "-o", workspace+"/muxedoutput"+".mkv", "--forced-track", str(vobtracks['video'][0])+":no", "--display-dimensions", str(vobtracks['video'][0])+":"+str(trackinfo['track'][0]['width'])+"x"+str(trackinfo['track'][0]['height']) ]
+	mkvmerge_arguments = [ "-o", os.path.join(workspace, "muxedoutput.mkv"), "--forced-track", str(vobtracks['video'][0])+":no", "--display-dimensions", str(vobtracks['video'][0])+":"+str(trackinfo['track'][0]['width'])+"x"+str(trackinfo['track'][0]['height']) ]
 
 	#muxing options for audiostreams
 	for index, audiostream in enumerate(trackinfo['track'][0]['audio']):
 		mkvmerge_arguments +=["--default-track", str(vobtracks['audio'][index])+":no", "--forced-track", str(vobtracks['audio'][index])+":no", "--language", str(vobtracks['audio'][index])+":"+audiostream['langcode']]
-	mkvmerge_arguments +=[ "-a", ','.join(vobtracks['audio']), "-d", "0", "-S", "-T", "--no-global-tags", "--no-chapters", workspace+"/videotrack.vob" ]
+	mkvmerge_arguments +=[ "-a", ','.join(vobtracks['audio']), "-d", "0", "-S", "-T", "--no-global-tags", "--no-chapters", os.path.join(workspace, "videotrack.vob") ]
 
 	for subtitlestream in trackinfo['track'][0]['subp']:
-		mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters",  workspace+"/subtitles_"+subtitlestream['langcode']+".idx" ]
+		mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters", os.path.join(workspace, "subtitles_" + subtitlestream['langcode'] + ".idx") ]
 
 	#use the XML data from parameters to write metadata in files
 	if chaptersData is not None:
-		chaptersXML_file = open(workspace+"/chapters.xml", "w")
+		chaptersXML_file = open(os.path.join(workspace, "chapters.xml"), "w")
 		chaptersData.writexml(chaptersXML_file, '\t', '\t', '\n', encoding="UTF-8")
 		chaptersXML_file.close()
-		mkvmerge_arguments += ["--chapter-charset", "UTF8", "--chapters", workspace+"/chapters.xml" ]
+		mkvmerge_arguments += ["--chapter-charset", "UTF8", "--chapters", os.path.join(workspace, "chapters.xml") ]
 	if tagsData is not None:
-		tagsXML_file = open(workspace+"/tags.xml", "w")
+		tagsXML_file = open(os.path.join(workspace, "tags.xml"), "w")
 		tagsData.writexml(tagsXML_file, '\t', '\t', '\n', encoding="UTF-8")
 		tagsXML_file.close()
-		mkvmerge_arguments += [ "--global-tags", workspace+"/tags.xml" ]
+		mkvmerge_arguments += [ "--global-tags", os.path.join(workspace, "tags.xml") ]
 
 	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
 
@@ -135,23 +135,21 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
 		tempfile.tempdir = os.path.dirname(destinationPath)
+	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
 
-	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix=os.path.basename(destinationPath))
 	os.chdir(workspace)
-
 	try:
 		ripTrack(dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
-		if not os.path.isfile(workspace+"/muxedoutput.mkv"):
-			raise FileNotFoundError("dvdtrackrip:", workspace+"/muxedoutput.mkv")
-		shutil.move(workspace+"/muxedoutput.mkv", destinationPath)
 	except SubProcessError as error:
-		errorlog = open(workspace+"/error.log", 'w')
+		errorlog = open(os.path.join(workspace, "error.log"), 'w')
 		errorlog.write( "\nCommand:" + error.args[0])
 		errorlog.write( "\nReturncode:" + str(error.args[1]) )
 		errorlog.write( "\nSubprocessor stderr: " + error.args[2] )
 		errorlog.close()
 		raise
 	else:
-		shutil.rmtree(workspace)
-
-	os.chdir("..")
+		# if not os.path.join(workspace, "muxedoutput.mkv"):
+		# 	raise FileNotFoundError("dvdtrackrip:", os.path.join(workspace, "muxedoutput.mkv"))
+		return os.path.join(workspace, "muxedoutput.mkv")
+	finally:
+		os.chdir("..")
