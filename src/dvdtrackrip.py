@@ -75,8 +75,8 @@ def getVobTracks(vobSource):
 		raise SubProcessError("getVobTracks", process.returncode, stdout)
 
 #generic function to run all other extern commands
-def runSubProcess(command):
-	stdoutfile = open("stdout.log", 'a')
+def runSubProcess(workspace, command):
+	stdoutfile = open(os.path.join(workspace, "stdout.log"), 'a')
 	stdoutfile.write( "Running:" + ' '.join(command) + "\n" )
 	process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	process.wait()
@@ -93,14 +93,14 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsDa
 
 	#Rip media data from dvd without any conversion to a vob file
 	mplayer_arguments =[ "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-dumpstream", "-dumpfile", os.path.join(workspace, "videotrack.vob") ]
-	mplayer_stdout = runSubProcess([commands['mplayer']] + mplayer_arguments)
+	mplayer_stdout = runSubProcess(workspace, [commands['mplayer']] + mplayer_arguments)
 
 	#for each detected Vobsub stream rip von dvdstructure
 	for subtitlestream in trackinfo['track'][0]['subp']:
 		mencoder_arguments =["-quiet", "-dvd-device", dvdsource_Path, "dvd://"+str(absolutetrack), "-nosound", "-ovc", "frameno", "-o", "/dev/null"]
 		mencoder_arguments +=["-slang", subtitlestream['langcode'], "-vobsuboutindex", "0", "-vobsuboutid", subtitlestream['langcode']]
 		mencoder_arguments +=["-vobsubout", os.path.join(workspace, "subtitles_" + subtitlestream['langcode'])]
-		mencoder_stdout = runSubProcess([commands['mencoder']] + mencoder_arguments)
+		mencoder_stdout = runSubProcess(workspace, [commands['mencoder']] + mencoder_arguments)
 
 	#get track ids from the ripped vob file, used in mkvmerge
 	vobtracks = getVobTracks( os.path.join(workspace, "videotrack.vob") )
@@ -127,7 +127,7 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsDa
 		tagsXML_file.close()
 		mkvmerge_arguments += [ "--global-tags", os.path.join(workspace, "tags.xml") ]
 
-	mkvmerge_output =runSubProcess([commands['mkvmerge']] + mkvmerge_arguments)
+	mkvmerge_output =runSubProcess(workspace, [commands['mkvmerge']] + mkvmerge_arguments)
 
 def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=None, tagsData=None):
 	if os.environ.get('TEMP'):
@@ -147,7 +147,5 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 		errorlog.close()
 		raise
 	else:
-		# if not os.path.join(workspace, "muxedoutput.mkv"):
-		# 	raise FileNotFoundError("dvdtrackrip:", os.path.join(workspace, "muxedoutput.mkv"))
 		return os.path.join(workspace, "muxedoutput.mkv")
 
