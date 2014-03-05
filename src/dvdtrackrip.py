@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.3
+#!/usr/bin/env python3
 
 import os, ast, re, subprocess, tempfile
 
@@ -77,7 +77,7 @@ def getVobTracks(vobSource):
 #generic function to run all other extern commands
 def runSubProcess(workspace, command):
 	stdoutfile = open(os.path.join(workspace, "stdout.log"), 'a')
-	stdoutfile.write( "Running:" + ' '.join(command) + "\n" )
+	stdoutfile.write( "Running:" + "\n" + ' '.join(command) + "\n" )
 	process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	process.wait()
 	stdout= process.stdout.read()

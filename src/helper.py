@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os, string, re
 from datetime import timedelta
 import xml.dom.minidom as dom
