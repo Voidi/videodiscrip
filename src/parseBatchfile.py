@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import re
+import re, os
 from helper import rippingJob
 
 class  SyntaxError(Exception):
@@ -18,22 +18,6 @@ def mergeStack_parts(*stackParts):
 	for part in stackParts:
 		output += part
 	return output
-"""
-	mergedStack = {'METADATA': {}, 'CHAPTERS': {}}
-
-	for stack in stackParts:
-		for key in stack.keys():
-			if key == "SOURCE_PATH-PART" or key == "OUTPUT_PATH-PART":
-				mergedStack[key] = os.path.normpath(os.path.join(mergedStack.get(key,''),stack.get(key,'')))
-			elif key == "OPTIONS":
-				mergedStack['OPTIONS'] = " ".join({mergedStack.get(key,''),stack.get(key,'')})
-			elif key[:15] == "CHAPTER_TITLES_":
-				mergedStack['CHAPTERS'][key[15:]] =  stack.get(key,'').split('%')
-			else:
-				mergedStack['METADATA'][key] = "".join({str(mergedStack['METADATA'].get(key,'')),str(stack.get(key,''))})
-	return mergedStack
-"""
-
 
 def parseBatchFile(batchFile_handle):
 	batchFile_lines = batchFile_handle.readlines()
@@ -78,9 +62,11 @@ def parseBatchFile(batchFile_handle):
 						break
 					#append value of current variable to a dictionary holding all data of the current line
 					if mappingOrder[depth][index]['template_string'] in ("SOURCE_PATH", "OUTPUT_PATH"):
-						jobStack_Part.update({mappingOrder[depth][index]['template_string']: match.group(1)})
-					elif mappingOrder[depth][index]['template_string'] in ("OUTPUT_FILENAME", "THRESHOLD", "METATAGS_TEMPLATEFILE"):
+						jobStack_Part.update({mappingOrder[depth][index]['template_string']: os.path.join(os.path.dirname(os.path.abspath(batchFile_handle.name)), match.group(1))})
+					elif mappingOrder[depth][index]['template_string'] in ("OUTPUT_FILENAME", "THRESHOLD"):
 						jobStack_Part['OPTIONS'].update({mappingOrder[depth][index]['template_string']: match.group(1)})
+					elif mappingOrder[depth][index]['template_string'] in ("METATAGS_TEMPLATEFILE"):
+						jobStack_Part['OPTIONS'].update({mappingOrder[depth][index]['template_string']: os.path.join(os.path.dirname(os.path.abspath(batchFile_handle.name)), match.group(1)) })
 					elif mappingOrder[depth][index]['template_string'][:15] == "CHAPTER_TITLES_":
 						jobStack_Part['CHAPTERDATA'].update({mappingOrder[depth][index]['template_string'][15:]: match.group(1).split('%')})
 					else:
