@@ -58,8 +58,14 @@ def execJobQueue(jobQueue):
 				if not os.path.exists(muxedOutput):
 					raise FileNotFoundError(2, "dvdtrackrip:", muxedOutput)
 				shutil.move(muxedOutput, job.OUTPUT_PATH + outputFilename)
+
+			except dvdtrackrip.StopRippingError as error:
+				print("Abort script. Removing temporary files")
+				shutil.rmtree(error.workspace)
+				sys.exit(1)
 			except dvdtrackrip.SubProcessError as error:
 				raise
+
 			else:
 				shutil.rmtree(os.path.dirname(muxedOutput))
 

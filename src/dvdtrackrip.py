@@ -2,6 +2,16 @@
 
 import os, ast, re, subprocess, tempfile
 
+class StopRippingError(Exception):
+	"""Exception raised forfor a non valid DVD structure.
+	Attributes:
+		source -- path to DvdStructure where the Error occurs
+	"""
+	def __init__(self, workspace):
+		self.workspace = workspace
+	def __str__(self):
+		return repr(self.workspace)
+
 class SubProcessError(Exception):
 	"""Exception raised forfor a non valid DVD structure.
 	Attributes:
@@ -135,7 +145,7 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 	else:
 		tempfile.tempdir = os.path.dirname(os.path.abspath(destinationPath))
 
-	workspace = tempfile.mkdtemp(prefix="dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
+	workspace = tempfile.mkdtemp(prefix="videodisc_dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
 
 	try:
 		ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
@@ -146,6 +156,8 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 		errorlog.write( "\nSubprocessor stderr: " + error.args[2] )
 		errorlog.close()
 		raise
+	except KeyboardInterrupt as error:
+		raise StopRippingError(workspace)
 	else:
 		return os.path.join(workspace, "muxedoutput.mkv")
 
