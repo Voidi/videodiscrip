@@ -30,6 +30,39 @@ def printwarning(message):
 def printerror(message):
 	print('\033[91m', message, '\033[0m', file=sys.stderr)
 
+def execJobQueue(jobQueue):
+	sourceInfo = None
+	for job in jobQueue:
+		if isinstance(job, dict):
+			if job.get('Control', '') == "newVideoSource":
+				print(job['Control'])
+				sourceInfo = None
+		elif isinstance(job, helper.rippingJob):
+			if sourceInfo is None:
+				sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
+
+			sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
+			outputFilename = helper.fillTemplateString(job.METADATA, job.OPTIONS['OUTPUT_FILENAME'])
+			chaptersXMLData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
+			metadataXMLData = helper.createMetadataXML(job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
+
+			print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
+			#print(job.OPTIONS)
+			#print(job.CHAPTERDATA)
+			#print(job.METADATA)
+
+			try:
+				if not os.path.isdir(job.OUTPUT_PATH):
+					os.makedirs(job.OUTPUT_PATH)
+				muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, chaptersXMLData, metadataXMLData)
+				if not os.path.exists(muxedOutput):
+					raise FileNotFoundError(2, "dvdtrackrip:", muxedOutput)
+				shutil.move(muxedOutput, job.OUTPUT_PATH + outputFilename)
+			except dvdtrackrip.SubProcessError as error:
+				raise
+			else:
+				shutil.rmtree(os.path.dirname(muxedOutput))
+
 if __name__ == "__main__":
 	#BEGIN main
 
@@ -39,50 +72,23 @@ if __name__ == "__main__":
 		cmdArg_Parser.add_argument("-d", "--destination", default=".", help="Directory where to save the ripped file")
 		cmdArg_Parser.add_argument("-b", "--batchfile", metavar="BATCHFILE", help="the file with jobs for batch mode and data to map for the items", type=argparse.FileType('r'))
 		cmdArg_Parser.add_argument("-t", "--tracksToRip", metavar="TRACK", nargs='*', type=int, help="the Track on the DVD to rip; if omit all tracks are ripped")
-
 		cmdArgs = cmdArg_Parser.parse_args()
 
 		sourcePath = os.path.abspath(os.path.normpath(cmdArgs.source))
 		destinationPath = os.path.abspath(os.path.normpath(cmdArgs.destination))
+		batchfile = cmdArgs.batchfile
 
 		if cmdArgs.batchfile:
 			if cmdArgs.source or cmdArgs.destination:
 				printwarning("The Options --source and -- destination are ignored when used in combinantion with --batchfile")
-			jobQueue = parseBatchfile.parseBatchFile(cmdArgs.batchfile)
+			jobQueue = parseBatchfile.parseBatchFile(batchfile)
+
 		elif cmdArgs.tracksToRip:
 			printwarning("not yet implemented")
 
-		sourceInfo = None
-		for job in jobQueue:
-			if isinstance(job, dict):
-				if job.get('Control', '') == "newVideoSource":
-					print(job['Control'])
-					sourceInfo = None
-			else:
-				if sourceInfo is None:
-					sourceInfo = dvdtrackrip.getDvdTrackInfo(job.SOURCE_PATH)
+		execJobQueue(jobQueue)
 
-				sourceTracknumber = helper.getTracksInThreshold(sourceInfo, *job.OPTIONS['THRESHOLD'].split())[job.TRACKNUMBER -1]
-				outputFilename = helper.fillTemplateString(job.METADATA, job.OPTIONS['OUTPUT_FILENAME'])
-				chaptersXMLData = helper.generateChaptersXML(sourceInfo['track'][sourceTracknumber - 1]['chapter'], helper.chapter_formatRestructure(job.CHAPTERDATA))
-				metadataXMLData = helper.createMetadataXML(job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
 
-				print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
-				print(job.OPTIONS)
-				print(job.CHAPTERDATA)
-				print(job.METADATA)
-
-				try:
-					if not os.path.isdir(job.OUTPUT_PATH):
-						os.makedirs(job.OUTPUT_PATH)
-					muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, chaptersXMLData, metadataXMLData)
-					if not os.path.exists(muxedOutput):
-						raise FileNotFoundError(2, "dvdtrackrip:", muxedOutput)
-					shutil.move(muxedOutput, job.OUTPUT_PATH + outputFilename)
-				except dvdtrackrip.SubProcessError as error:
-					raise
-				else:
-					shutil.rmtree(os.path.dirname(muxedOutput))
 
 	#END main
 
