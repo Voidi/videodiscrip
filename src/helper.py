@@ -21,6 +21,7 @@ class rippingJob:
 			self.OUTPUT_PATH = ""
 			self.TRACKNUMBER = 0
 			self.OPTIONS = {}
+			self.OUTPUT_TRACKNAMES = []
 			self.METADATA = {}
 			self.CHAPTERDATA = {}
 		elif isinstance(jobStack_Part, dict):
@@ -29,10 +30,11 @@ class rippingJob:
 			self.TRACKNUMBER = jobStack_Part.get('TRACKNUMBER',0)
 			self.OPTIONS = jobStack_Part.get('OPTIONS','')
 			self.METADATA = jobStack_Part.get('METADATA','')
+			self.OUTPUT_TRACKNAMES = jobStack_Part.get('OUTPUT_TRACKNAMES','')
 			self.CHAPTERDATA = jobStack_Part.get('CHAPTERDATA','')
 
 	def __str__(self):
-		return self.SOURCE_PATH + ":" + str(self.TRACKNUMBER) + " -> "+ self.OUTPUT_PATH + "\n" + "OPTIONS:" + str(self.OPTIONS) + "\n" + "METADATA:" + str(self.METADATA) + "\n" + "CHAPTERDATA:" + str(self.CHAPTERDATA)
+		return self.SOURCE_PATH + ":" + str(self.TRACKNUMBER) + " -> "+ self.OUTPUT_PATH + "\n" + "OPTIONS:" + str(self.OPTIONS) + "\n" + "OUTPUT_TRACKNAMES:" + str(self.OUTPUT_TRACKNAMES) + "\n" + "METADATA:" + str(self.METADATA) + "\n" + "CHAPTERDATA:" + str(self.CHAPTERDATA)
 
 	def __add__(self, other):
 		if isinstance(other, rippingJob):
@@ -42,6 +44,8 @@ class rippingJob:
 			result.TRACKNUMBER = other.TRACKNUMBER
 			result.OPTIONS.update(self.OPTIONS)
 			result.OPTIONS.update(other.OPTIONS)
+			result.OUTPUT_TRACKNAMES += self.OUTPUT_TRACKNAMES
+			result.OUTPUT_TRACKNAMES += other.OUTPUT_TRACKNAMES
 			result.METADATA.update(self.METADATA)
 			result.METADATA.update(other.METADATA)
 			result.CHAPTERDATA.update(self.CHAPTERDATA)
@@ -54,6 +58,8 @@ class rippingJob:
 			result.TRACKNUMBER = other.get('TRACKNUMBER')
 			result.OPTIONS.update(self.get('OPTIONS'))
 			result.OPTIONS.update(other.get('OPTIONS'))
+			result.OUTPUT_TRACKNAMES += self.get('OUTPUT_TRACKNAMES')
+			result.OUTPUT_TRACKNAMES += other.get('OUTPUT_TRACKNAMES')
 			result.METADATA.update(self.get('METADATA'))
 			result.METADATA.update(other.get('METADATA'))
 			result.CHAPTERDATA.update(self.get('CHAPTERDATA'))
@@ -66,6 +72,7 @@ class rippingJob:
 			self.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.OUTPUT_PATH)
 			self.TRACKNUMBER = other.TRACKNUMBER
 			self.OPTIONS.update(other.OPTIONS)
+			self.OUTPUT_TRACKNAMES += other.OUTPUT_TRACKNAMES
 			self.METADATA.update(other.METADATA)
 			self.CHAPTERDATA.update(other.CHAPTERDATA)
 			return self
@@ -74,6 +81,7 @@ class rippingJob:
 			self.OUTPUT_PATH = os.path.join(self.OUTPUT_PATH, other.get('OUTPUT_PATH', ''))
 			self.TRACKNUMBER = other.get('TRACKNUMBER')
 			self.OPTIONS.update(other.get('OPTIONS'))
+			self.OUTPUT_TRACKNAMES += other.get('OUTPUT_TRACKNAMES')
 			self.METADATA.update(other.get('METADATA'))
 			self.CHAPTERDATA.update(other.get('CHAPTERDATA'))
 			return self

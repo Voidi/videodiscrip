@@ -47,11 +47,10 @@ def execJobQueue(jobQueue):
 			metadataXMLData = helper.createMetadataXML(job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
 
 			print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
-
 			try:
 				if not os.path.isdir(job.OUTPUT_PATH):
 					os.makedirs(job.OUTPUT_PATH)
-				muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, outputStreamNames=None, chaptersData=chaptersXMLData, tagsData=metadataXMLData)
+				muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, outputStreamNames=job.OUTPUT_TRACKNAMES, chaptersData=chaptersXMLData, tagsData=metadataXMLData)
 				if not os.path.exists(muxedOutput):
 					raise FileNotFoundError(2, "dvdtrackrip:", muxedOutput)
 				shutil.move(muxedOutput, job.OUTPUT_PATH + outputFilename)

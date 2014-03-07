@@ -126,7 +126,8 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames=None, c
 	#muxing options for videostreams, currently only the first one is used
 	try:
 		outputStreamNames_item = next(outputStreamNames_iter)
-		mkvmerge_arguments += ["--track-name", str(vobtracks['video'][0]) + ":" + outputStreamNames_item]
+		if outputStreamNames_item != None or outputStreamNames_item != '':
+			mkvmerge_arguments += ["--track-name", str(vobtracks['video'][0]) + ":" + outputStreamNames_item]
 	except (TypeError, StopIteration):
 		pass
 	mkvmerge_arguments +=["--forced-track", str(vobtracks['video'][0])+":no", "--display-dimensions", str(vobtracks['video'][0])+":"+str(trackinfo['track'][0]['width'])+"x"+str(trackinfo['track'][0]['height']) ]
@@ -135,7 +136,8 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames=None, c
 	for index, audiostream in enumerate(trackinfo['track'][0]['audio']):
 		try:
 			outputStreamNames_item = next(outputStreamNames_iter)
-			mkvmerge_arguments += ["--track-name", str(vobtracks['audio'][index]) + ":" + outputStreamNames_item]
+			if outputStreamNames_item != None or outputStreamNames_item != '':
+				mkvmerge_arguments += ["--track-name", str(vobtracks['audio'][index]) + ":" + outputStreamNames_item]
 		except (TypeError, StopIteration):
 			pass
 		mkvmerge_arguments +=["--default-track", str(vobtracks['audio'][index])+":no", "--forced-track", str(vobtracks['audio'][index])+":no", "--language", str(vobtracks['audio'][index])+":"+audiostream['langcode']]
@@ -145,7 +147,8 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames=None, c
 	for subtitlestream in trackinfo['track'][0]['subp']:
 		try:
 			outputStreamNames_item = next(outputStreamNames_iter)
-			mkvmerge_arguments += ["--track-name", "0:" + outputStreamNames_item]
+			if outputStreamNames_item != None or outputStreamNames_item != '':
+				mkvmerge_arguments += ["--track-name", "0:" + outputStreamNames_item]
 		except (TypeError, StopIteration):
 			pass
 		mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters", os.path.join(workspace, "subtitles_" + subtitlestream['langcode'] + ".idx") ]
