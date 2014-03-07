@@ -165,6 +165,16 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames=None, c
 		tagsXML_file.close()
 		mkvmerge_arguments += [ "--global-tags", os.path.join(workspace, "tags.xml") ]
 
+	#tracks of every type are ordered alphabetic by the ISO639-2-Codes
+	trackOrder = "0:0"
+	sortedTracks = [item['track'] for item in sorted([{'track':index, 'langcode':track['langcode']} for index,track in enumerate(trackinfo['track'][0]['audio'])], key=lambda k: k['langcode'])]
+	for item in sortedTracks:
+		trackOrder += "," + "0:" + str(item+1)
+	sortedTracks = [item['track'] for item in sorted([{'track':index, 'langcode':track['langcode']} for index,track in enumerate(trackinfo['track'][0]['subp'])], key=lambda k: k['langcode'])]
+	for item in sortedTracks:
+		trackOrder += "," + str(item) + ":0"
+	mkvmerge_arguments += [ "--track-order", trackOrder ]
+
 	mkvmerge_output =runSubProcess(workspace, [commands['mkvmerge']] + mkvmerge_arguments)
 
 def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath=None, outputStreamNames=None, chaptersData=None, tagsData=None):
