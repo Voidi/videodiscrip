@@ -17,12 +17,12 @@ class SubProcessError(Exception):
 	Attributes:
 		command --
 		returncode --
-		stderror --
+		stderr --
 	"""
-	def __init__(self, command, returncode, stderror):
-		self.command = command
+	def __init__(self, command, returncode, stderr):
+		self.command =  "' '".join(command)
 		self.returncode = returncode
-		self.stderror = stderror
+		self.stderr = stderr
 
 class DvdTrackError(Exception):
 	"""Exception raised for errors with nonvalid Track selection.
@@ -30,19 +30,19 @@ class DvdTrackError(Exception):
 		source -- path to DvdStructure where the Error occurs
 		track --
 	"""
-	def __init__(self, source, tracknumber, stderror):
+	def __init__(self, source, tracknumber, stderr):
 		self.source = source
 		self.track = track
-		self.stderror = stderror
+		self.stderr = stderr
 
 class DvdSourceError(Exception):
 	"""Exception raised forfor a non valid DVD structure.
 	Attributes:
 		source -- path to DvdStructure where the Error occurs
 	"""
-	def __init__(self, source, stderror):
+	def __init__(self, source, stderr):
 		self.source = source
-		self.stderror = stderror
+		self.stderr = stderr
 
 commands = {'lsdvd': "lsdvd", 'mplayer': "mplayer", 'mencoder': "mencoder", 'mkvmerge' : "mkvmerge"}
 
@@ -173,11 +173,10 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath=None, outputStrea
 	workspace = tempfile.mkdtemp(prefix="videodisc_dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
 
 	try:
-		ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames, chaptersData, tagsData)
 	except SubProcessError as error:
 		errorlog = open(os.path.join(workspace, "error.log"), 'w')
-		errorlog.write( "\nCommand:" + error.command)
-		errorlog.write( "\nReturncode:" + str(error.returncode) )
+		errorlog.write( "\nCommand:" + error.command + "\tSubprocessor stderr: " + str(error.returncode) )
 		errorlog.write( "\nSubprocessor stderr: " + error.stderr )
 		errorlog.close()
 		raise

@@ -51,7 +51,7 @@ def execJobQueue(jobQueue):
 			try:
 				if not os.path.isdir(job.OUTPUT_PATH):
 					os.makedirs(job.OUTPUT_PATH)
-				muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, chaptersXMLData, metadataXMLData)
+				muxedOutput = dvdtrackrip.dvdtrackrip(job.SOURCE_PATH, sourceTracknumber, job.OUTPUT_PATH + outputFilename, outputStreamNames=None, chaptersData=chaptersXMLData, tagsData=metadataXMLData)
 				if not os.path.exists(muxedOutput):
 					raise FileNotFoundError(2, "dvdtrackrip:", muxedOutput)
 				shutil.move(muxedOutput, job.OUTPUT_PATH + outputFilename)
@@ -111,6 +111,5 @@ if __name__ == "__main__":
 		printerror("stderr: \n" + error.stderror)
 
 	except dvdtrackrip.SubProcessError as error:
-		printerror( "\nCommand:" + error.args[0] )
-		printerror( "\nSubprocessor stderr: " + error.args[1] )
-		printerror( "\nReturncode:" + str(error.args[2]) )
+		printerror( "\nCommand:" + error.command + "\tReturncode:" + str(error.returncode))
+		printerror( "Subprocessor stderr: " + error.stderr )
