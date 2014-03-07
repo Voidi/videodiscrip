@@ -62,7 +62,7 @@ def parseBatchFile(batchFile_handle):
 						break
 					#append value of current variable to a dictionary holding all data of the current line
 					if mappingOrder[depth][index]['template_string'] in ("SOURCE_PATH", "OUTPUT_PATH"):
-						jobStack_Part.update({mappingOrder[depth][index]['template_string']: os.path.join(os.path.dirname(os.path.abspath(batchFile_handle.name)), match.group(1))})
+						jobStack_Part.update({mappingOrder[depth][index]['template_string']: match.group(1)})
 					elif mappingOrder[depth][index]['template_string'] in ("OUTPUT_FILENAME", "THRESHOLD"):
 						jobStack_Part['OPTIONS'].update({mappingOrder[depth][index]['template_string']: match.group(1)})
 					elif mappingOrder[depth][index]['template_string'] in ("METATAGS_TEMPLATEFILE"):

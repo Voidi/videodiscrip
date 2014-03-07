@@ -3,9 +3,9 @@
 import os, ast, re, subprocess, tempfile
 
 class StopRippingError(Exception):
-	"""Exception raised forfor a non valid DVD structure.
+	"""Exception raised when the user hits interupt key.
 	Attributes:
-		source -- path to DvdStructure where the Error occurs
+		workspace -- path to temporary files
 	"""
 	def __init__(self, workspace):
 		self.workspace = workspace
@@ -13,14 +13,16 @@ class StopRippingError(Exception):
 		return repr(self.workspace)
 
 class SubProcessError(Exception):
-	"""Exception raised forfor a non valid DVD structure.
+	"""Exception raised if one of the used programms fail.
 	Attributes:
-		source -- path to DvdStructure where the Error occurs
+		command --
+		returncode --
+		stderror --
 	"""
-	def __init__(self, command, returncode, subprocess_stderror):
+	def __init__(self, command, returncode, stderror):
 		self.command = command
 		self.returncode = returncode
-		self.subprocess_stderror = subprocess_stderror
+		self.stderror = stderror
 
 class DvdTrackError(Exception):
 	"""Exception raised for errors with nonvalid Track selection.
@@ -28,19 +30,19 @@ class DvdTrackError(Exception):
 		source -- path to DvdStructure where the Error occurs
 		track --
 	"""
-	def __init__(self, source, track, subprocess_stderror):
+	def __init__(self, source, tracknumber, stderror):
 		self.source = source
 		self.track = track
-		self.subprocess_stderror = subprocess_stderror
+		self.stderror = stderror
 
 class DvdSourceError(Exception):
 	"""Exception raised forfor a non valid DVD structure.
 	Attributes:
 		source -- path to DvdStructure where the Error occurs
 	"""
-	def __init__(self, source, subprocess_stderror):
+	def __init__(self, source, stderror):
 		self.source = source
-		self.subprocess_stderror = subprocess_stderror
+		self.stderror = stderror
 
 commands = {'lsdvd': "lsdvd", 'mplayer': "mplayer", 'mencoder': "mencoder", 'mkvmerge' : "mkvmerge"}
 
@@ -98,7 +100,7 @@ def runSubProcess(workspace, command):
 		raise SubProcessError(command, process.returncode, stderr)
 	return stdout
 
-def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsData=None):
+def ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames=None, chaptersData=None, tagsData=None):
 	trackinfo = getDvdTrackInfo(dvdsource_Path, absolutetrack)
 
 	#Rip media data from dvd without any conversion to a vob file
@@ -115,14 +117,37 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsDa
 	#get track ids from the ripped vob file, used in mkvmerge
 	vobtracks = getVobTracks( os.path.join(workspace, "videotrack.vob") )
 
-	mkvmerge_arguments = [ "-o", os.path.join(workspace, "muxedoutput.mkv"), "--forced-track", str(vobtracks['video'][0])+":no", "--display-dimensions", str(vobtracks['video'][0])+":"+str(trackinfo['track'][0]['width'])+"x"+str(trackinfo['track'][0]['height']) ]
+	mkvmerge_arguments = [ "-o", os.path.join(workspace, "muxedoutput.mkv")]
+	try:
+		outputStreamNames_iter = iter(outputStreamNames)
+	except TypeError:
+		outputStreamNames_iter = None
+
+	#muxing options for videostreams, currently only the first one is used
+	try:
+		outputStreamNames_item = next(outputStreamNames_iter)
+		mkvmerge_arguments += ["--track-name", str(vobtracks['video'][0]) + ":" + outputStreamNames_item]
+	except (TypeError, StopIteration):
+		pass
+	mkvmerge_arguments +=["--forced-track", str(vobtracks['video'][0])+":no", "--display-dimensions", str(vobtracks['video'][0])+":"+str(trackinfo['track'][0]['width'])+"x"+str(trackinfo['track'][0]['height']) ]
 
 	#muxing options for audiostreams
 	for index, audiostream in enumerate(trackinfo['track'][0]['audio']):
+		try:
+			outputStreamNames_item = next(outputStreamNames_iter)
+			mkvmerge_arguments += ["--track-name", str(vobtracks['audio'][index]) + ":" + outputStreamNames_item]
+		except (TypeError, StopIteration):
+			pass
 		mkvmerge_arguments +=["--default-track", str(vobtracks['audio'][index])+":no", "--forced-track", str(vobtracks['audio'][index])+":no", "--language", str(vobtracks['audio'][index])+":"+audiostream['langcode']]
+
 	mkvmerge_arguments +=[ "-a", ','.join(vobtracks['audio']), "-d", "0", "-S", "-T", "--no-global-tags", "--no-chapters", os.path.join(workspace, "videotrack.vob") ]
 
 	for subtitlestream in trackinfo['track'][0]['subp']:
+		try:
+			outputStreamNames_item = next(outputStreamNames_iter)
+			mkvmerge_arguments += ["--track-name", "0:" + outputStreamNames_item]
+		except (TypeError, StopIteration):
+			pass
 		mkvmerge_arguments +=[ "--language", "0:"+subtitlestream['langcode'], "--default-track", "0:no", "--forced-track", "0:no", "-s", "0", "-D", "-A", "-T", "--no-global-tags", "--no-chapters", os.path.join(workspace, "subtitles_" + subtitlestream['langcode'] + ".idx") ]
 
 	#use the XML data from parameters to write metadata in files
@@ -139,7 +164,7 @@ def ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=None, tagsDa
 
 	mkvmerge_output =runSubProcess(workspace, [commands['mkvmerge']] + mkvmerge_arguments)
 
-def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=None, tagsData=None):
+def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath=None, outputStreamNames=None, chaptersData=None, tagsData=None):
 	if os.environ.get('TEMP'):
 		tempfile.tempdir = os.environ.get('TEMP')
 	else:
@@ -148,12 +173,12 @@ def dvdtrackrip(dvdsource_Path, absolutetrack, destinationPath, chaptersData=Non
 	workspace = tempfile.mkdtemp(prefix="videodisc_dvdtrackrip_", suffix="_" + os.path.basename(destinationPath))
 
 	try:
-		ripTrack(workspace, dvdsource_Path, absolutetrack, chaptersData=chaptersData, tagsData=tagsData)
+		ripTrack(workspace, dvdsource_Path, absolutetrack, outputStreamNames, chaptersData=chaptersData, tagsData=tagsData)
 	except SubProcessError as error:
 		errorlog = open(os.path.join(workspace, "error.log"), 'w')
-		errorlog.write( "\nCommand:" + error.args[0])
-		errorlog.write( "\nReturncode:" + str(error.args[1]) )
-		errorlog.write( "\nSubprocessor stderr: " + error.args[2] )
+		errorlog.write( "\nCommand:" + error.command)
+		errorlog.write( "\nReturncode:" + str(error.returncode) )
+		errorlog.write( "\nSubprocessor stderr: " + error.stderr )
 		errorlog.close()
 		raise
 	except KeyboardInterrupt as error:

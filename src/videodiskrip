@@ -25,10 +25,10 @@ class FileNotFoundError(Exception):
 		self.function = function
 
 def printwarning(message):
-	print('\033[93m', message, '\033[0m', file=sys.stderr)
+	print('\033[93m' + message + '\033[0m', file=sys.stderr)
 
 def printerror(message):
-	print('\033[91m', message, '\033[0m', file=sys.stderr)
+	print('\033[91m' + message + '\033[0m', file=sys.stderr)
 
 def execJobQueue(jobQueue):
 	sourceInfo = None
@@ -47,9 +47,6 @@ def execJobQueue(jobQueue):
 			metadataXMLData = helper.createMetadataXML(job.OPTIONS['METATAGS_TEMPLATEFILE'], job.METADATA)
 
 			print(job.SOURCE_PATH + ":" + str(sourceTracknumber) + " -> " + job.OUTPUT_PATH + outputFilename)
-			#print(job.OPTIONS)
-			#print(job.CHAPTERDATA)
-			#print(job.METADATA)
 
 			try:
 				if not os.path.isdir(job.OUTPUT_PATH):
@@ -94,8 +91,6 @@ if __name__ == "__main__":
 
 		execJobQueue(jobQueue)
 
-
-
 	#END main
 
 	except FileNotFoundError as error:
@@ -109,11 +104,11 @@ if __name__ == "__main__":
 		printwarning(error.args[0])
 
 	except dvdtrackrip.DvdTrackError as error:
-		printerror("In Dvd source '" + error.args[0] + "' exists no Track number " + error.args[1])
+		printerror("In Dvd source '" + error.source + "' exists no Track number " + error.tracknumber)
 
 	except dvdtrackrip.DvdSourceError as error:
-		printerror("The path '" + error.args[0] + "' contains no valid DVD source")
-		printerror("stderr: \n" + error.args[1])
+		printerror("The path '" + error.source + "' contains no valid DVD source")
+		printerror("stderr: \n" + error.stderror)
 
 	except dvdtrackrip.SubProcessError as error:
 		printerror( "\nCommand:" + error.args[0] )
